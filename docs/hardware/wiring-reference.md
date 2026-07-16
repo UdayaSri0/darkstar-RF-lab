@@ -1,5 +1,12 @@
-# ESP32 Multi-Band RF Signal Analyzer
-## Corrected Analyzer-Only Wiring Reference
+# DarkStar RF Lab wiring reference
+
+## Corrected receive-only controller allocation
+
+> [!CAUTION]
+> This is a design-stage wiring allocation, not a prototype-validated
+> schematic. Verify development-board pin labels, breakout-board supply
+> requirements, ESP32 boot-strapping constraints, and current manufacturer
+> documentation before assembly.
 
 This design is for passive RF spectrum observation and receive-only experimentation on equipment and signals you are authorised to test. Active interference or jamming functions are intentionally excluded.
 
