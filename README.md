@@ -90,13 +90,21 @@ construction package.
 
 ### Available now
 
-- Offline HTML5 Canvas circuit guide.
-- Zoom, pan, component selection, and component search.
-- Layer visibility, pin labels, wire labels, and a minimap.
-- Component pin/connection inspector.
+- Offline HTML5 Canvas component explorer with structured component, pin,
+  connection, bus and guided-path data.
+- Component, bus, signal-path, power and beginner-learning modes.
+- Zoom, pan, fit/reset, touch/pointer handling, minimap and full-text search by
+  component, GPIO, pin, signal, bus, purpose or frequency band.
+- Layer visibility, pin labels, wire labels and grid controls.
+- Rich component inspector with role, voltage, interface, limitations,
+  relationships, datasheet links and seven-column pin tables.
+- Eight bus/signal explanations, ten guided paths and three measurement
+  comparison panels.
 - PNG export of the current canvas view.
 - Printable wiring tables.
 - Corrected ESP32 pin-allocation and power-distribution reference.
+- Responsive layouts, keyboard relationship navigation, visible focus and
+  reduced-motion support.
 
 ### Planned
 
@@ -308,9 +316,19 @@ To use it:
    browser.
 3. Use the mouse wheel or zoom buttons to zoom.
 4. Drag the canvas to pan.
-5. Click a component to inspect its role and connections.
-6. Use search and layer controls to isolate part of the design.
-7. Use **Export current view as PNG** or **Print pin tables** when required.
+5. Choose Component, Bus, Signal path, Power or Learning mode.
+6. Click a component to inspect its role, limits and pin functions.
+7. Search for terms such as `GPIO18`, `MISO`, `battery`, `5 GHz` or `RF power`.
+8. Use layer controls to isolate part of the design.
+9. Use **Export current view as PNG** or **Print pin tables** when required.
+
+Keyboard shortcuts are `+`/`-` for zoom, `0` to fit, `/` to focus search,
+arrow keys to move among related components, and Escape to exit a guide or
+clear the inspector.
+
+GitHub Pages is not currently configured in this repository. The explorer is
+still suitable for Pages because it uses only relative links and local HTML,
+CSS and JavaScript with no CDN or build step.
 
 Some browsers restrict features of local `file://` pages. If that occurs, serve
 the repository locally with an already-installed static server; the guide
@@ -374,6 +392,12 @@ darkstar-RF-lab/
 ├── CONTRIBUTING.md
 ├── README.md
 ├── docs/
+│   ├── ASSEMBLY_GUIDE.md
+│   ├── COMMUNICATION_BUSES.md
+│   ├── COMPONENT_REFERENCE.md
+│   ├── LEGAL_AND_SAFETY.md
+│   ├── PIN_MAP.md
+│   ├── POWER_DESIGN.md
 │   ├── hardware/
 │   │   └── wiring-reference.md
 │   ├── images/
@@ -410,6 +434,8 @@ blocks are not final engineering specifications.
 - [x] Publish a corrected main-controller pin-allocation reference
 - [x] Create the offline interactive circuit guide
 - [x] Establish a structured documentation layout
+- [x] Add component, bus, signal-path, power and learning exploration modes
+- [x] Add searchable pin-level component inspection and accessible controls
 - [ ] Review and finalise a complete electrical schematic
 - [ ] Finalise component selections and the bill of materials
 - [ ] Create the first breadboard or modular prototype
@@ -469,8 +495,14 @@ Read [`CONTRIBUTING.md`](CONTRIBUTING.md) before submitting a change.
 
 ## Documentation
 
-- [Corrected hardware wiring reference](docs/hardware/wiring-reference.md)
-- [Offline interactive circuit guide](web-guide/index.html)
+- [Interactive component explorer](web-guide/index.html)
+- [Component reference](docs/COMPONENT_REFERENCE.md)
+- [Corrected pin map](docs/PIN_MAP.md)
+- [Communication buses and signals](docs/COMMUNICATION_BUSES.md)
+- [Power design](docs/POWER_DESIGN.md)
+- [Assembly guide](docs/ASSEMBLY_GUIDE.md)
+- [Legal, safety and responsible use](docs/LEGAL_AND_SAFETY.md)
+- [Legacy corrected hardware wiring reference](docs/hardware/wiring-reference.md)
 - [Guide usage notes](web-guide/README.md)
 - [Legacy reference-material notice](docs/reference/README.md)
 
@@ -483,3 +515,5 @@ Read [`CONTRIBUTING.md`](CONTRIBUTING.md) before submitting a change.
 
 No open-source licence has been selected yet. All rights remain with the
 project owner.
+
+
