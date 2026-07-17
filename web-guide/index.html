@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Interactive receive-only ESP32 RF signal analyser wiring guide with 2.4 GHz, sub-GHz and 5 GHz extensions.">
-  <title>DarkStar RF Lab — Interactive Circuit Guide</title>
+  <title>DarkStar RF Lab — Interactive Component Explorer</title>
   <style>
 :root {
   color-scheme: dark;
@@ -21,6 +21,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 html, body {
   margin: 0;
@@ -53,6 +54,92 @@ button:hover, button:focus-visible {
   border-color: #5e91bd;
   outline: none;
 }
+
+:focus-visible {
+  outline: 3px solid #f4d35e;
+  outline-offset: 3px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.status-banner {
+  margin: 0;
+  padding: .65rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 189, 107, .35);
+  background: #251c0f;
+  color: #ffe1b6;
+  text-align: center;
+  font-size: .82rem;
+}
+
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; }
+.mode-grid button[aria-pressed="true"] { border-color: var(--accent); background: #173b57; }
+
+select {
+  width: 100%;
+  padding: .65rem .7rem;
+  border: 1px solid #2b4562;
+  border-radius: 9px;
+  background: #081422;
+  color: var(--text);
+  font: inherit;
+}
+
+.mode-panel, .guide-panel {
+  margin-top: .7rem;
+  padding: .7rem;
+  border: 1px solid #294762;
+  border-radius: 9px;
+  background: rgba(45, 91, 127, .10);
+  color: var(--muted);
+  font-size: .79rem;
+  line-height: 1.5;
+}
+
+.mode-panel strong, .guide-panel strong { color: var(--text); }
+.guide-panel[hidden], .search-results[hidden] { display: none; }
+.guide-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: .4rem; margin-top: .6rem; }
+.guide-actions button { padding: .5rem .35rem; }
+
+.search-results {
+  display: grid;
+  gap: .25rem;
+  max-height: 14rem;
+  margin-top: .45rem;
+  overflow: auto;
+}
+
+.search-result {
+  width: 100%;
+  padding: .55rem;
+  text-align: left;
+  background: #0b1a29;
+}
+
+.search-result small { display: block; margin-top: .15rem; color: var(--muted); }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; margin: .8rem 0; }
+.detail-grid div { padding: .5rem; border: 1px solid #26394e; border-radius: 7px; background: rgba(255,255,255,.02); }
+.detail-grid dt { color: var(--muted); font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; }
+.detail-grid dd { margin: .2rem 0 0; color: var(--text); font-size: .79rem; line-height: 1.35; }
+.inspector-links { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .8rem; }
+.inspector-links a { color: #9edbff; font-size: .78rem; }
+.mode-content { grid-column: 1 / -1; }
+.learning-grid, .comparison-grid, .bus-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; }
+.learning-card, .comparison-card, .bus-card { border: 1px solid var(--border); border-radius: 10px; padding: .8rem; background: var(--panel-2); }
+.learning-card h3, .comparison-card h3, .bus-card h3 { margin: 0 0 .45rem; color: #bfe5ff; font-size: .95rem; }
+.learning-card p, .comparison-card p, .bus-card p { margin: 0; color: var(--muted); font-size: .82rem; line-height: 1.55; }
+.bus-lines { margin-top: .55rem; color: #f2d889; font: 600 .73rem ui-monospace, monospace; }
+.keyboard-help { color: var(--muted); font-size: .75rem; line-height: 1.5; }
 
 button.secondary { background: #101d2b; }
 
@@ -197,6 +284,8 @@ button.secondary { background: #101d2b; }
   cursor: grab;
 }
 
+#circuitCanvas:focus-visible { outline: 3px solid #f4d35e; outline-offset: -4px; }
+
 #circuitCanvas.dragging { cursor: grabbing; }
 
 .canvas-toolbar {
@@ -335,6 +424,7 @@ footer {
     gap: 1rem;
   }
   .right-panel section { border-bottom: 0; }
+  .learning-grid, .comparison-grid, .bus-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 760px) {
@@ -343,8 +433,19 @@ footer {
   .sidebar { max-height: none; border: 0; }
   .canvas-shell { min-height: 650px; border-block: 1px solid var(--border); }
   .right-panel { display: block; }
+  .right-panel {
+    position: relative;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -18px 50px rgba(0,0,0,.35);
+  }
   .documentation { grid-template-columns: 1fr; }
+  .learning-grid, .comparison-grid, .bus-grid { grid-template-columns: 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
   #miniMap { width: 190px; height: 110px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .001ms !important; animation-duration: .001ms !important; }
 }
 
 @media print {
@@ -363,7 +464,7 @@ footer {
   <header class="app-header">
     <div>
       <p class="eyebrow">DARKSTAR RF LAB</p>
-      <h1>Multi-band RF signal analyser — interactive wiring guide</h1>
+      <h1>Interactive Component Explorer</h1>
       <p class="subtitle">ESP32 + nRF24L01 + CC1101 + ESP32-C5 + AD8318 · Receive-only architecture</p>
     </div>
     <div class="header-badges">
@@ -374,22 +475,52 @@ footer {
     </div>
   </header>
 
+  <p class="status-banner" role="note"><strong>Design-stage educational aid:</strong> receive-only and passive by design. This is not a certified laboratory instrument and must not be used for safety-critical measurements.</p>
+
   <main class="workspace">
     <aside class="sidebar left-panel">
+      <section aria-labelledby="modeHeading">
+        <h2 id="modeHeading">Exploration mode</h2>
+        <div class="mode-grid" id="modeControls">
+          <button type="button" data-mode="component" aria-pressed="true">Component</button>
+          <button type="button" data-mode="bus" aria-pressed="false">Bus</button>
+          <button type="button" data-mode="signal" aria-pressed="false">Signal path</button>
+          <button type="button" data-mode="power" aria-pressed="false">Power</button>
+          <button type="button" data-mode="learning" aria-pressed="false">Learning</button>
+        </div>
+        <label class="field" id="busField" hidden>
+          <span>Select bus</span>
+          <select id="busSelect" aria-label="Select communication bus"></select>
+        </label>
+        <label class="field" id="pathField" hidden>
+          <span>Select guided path</span>
+          <select id="pathSelect" aria-label="Select guided signal path"></select>
+        </label>
+        <div id="modePanel" class="mode-panel" aria-live="polite"><strong>Component mode.</strong> Select a block to inspect it and its direct relationships.</div>
+        <div id="guidePanel" class="guide-panel" hidden>
+          <strong id="guideTitle"></strong>
+          <p id="guideText"></p>
+          <div class="guide-actions">
+            <button type="button" id="guidePrev">Previous</button>
+            <button type="button" id="guideNext">Next</button>
+            <button type="button" id="guideExit">Exit</button>
+          </div>
+        </div>
+      </section>
       <section>
         <h2>View controls</h2>
         <div class="button-grid">
-          <button id="zoomIn" title="Zoom in">＋</button>
-          <button id="zoomOut" title="Zoom out">−</button>
+          <button id="zoomIn" title="Zoom in" aria-label="Zoom in">＋</button>
+          <button id="zoomOut" title="Zoom out" aria-label="Zoom out">−</button>
           <button id="fitView">Fit circuit</button>
           <button id="resetView">Reset</button>
         </div>
         <label class="field">
-          <span>Find component</span>
-          <input id="searchInput" type="search" list="componentNames" placeholder="e.g. ESP32-C5">
-          <datalist id="componentNames"></datalist>
+          <span>Search components and signals</span>
+          <input id="searchInput" type="search" placeholder="GPIO18, MISO, 5 GHz, battery…" autocomplete="off" aria-controls="searchResults" aria-expanded="false">
         </label>
-        <button id="searchButton" class="wide">Focus selected component</button>
+        <button id="searchButton" class="wide">Search and focus</button>
+        <div id="searchResults" class="search-results" role="listbox" hidden></div>
       </section>
 
       <section>
@@ -410,20 +541,26 @@ footer {
         <button id="printGuide" class="wide secondary">Print pin tables</button>
       </section>
 
+      <section>
+        <h2>Keyboard</h2>
+        <p class="keyboard-help"><kbd>+</kbd>/<kbd>−</kbd> zoom · <kbd>0</kbd> fit · <kbd>/</kbd> search · arrow keys move through connected components · <kbd>Esc</kbd> closes the active guide or inspector.</p>
+      </section>
+
       <section class="safety-card">
         <h2>Scope</h2>
         <p>This guide intentionally excludes signal jamming, packet injection and active interference. Use it for passive observation and authorised laboratory testing.</p>
       </section>
     </aside>
 
-    <section class="canvas-shell" aria-label="Interactive circuit canvas">
+    <section class="canvas-shell" aria-label="Interactive circuit workspace">
       <div class="canvas-toolbar">
         <span id="zoomReadout">100%</span>
         <span>Wheel: zoom · drag: pan · click: inspect</span>
       </div>
-      <canvas id="circuitCanvas"></canvas>
+      <canvas id="circuitCanvas" tabindex="0" role="img" aria-label="Interactive circuit diagram. Use search or keyboard arrows to select connected components."></canvas>
       <canvas id="miniMap" width="260" height="150" aria-label="Circuit minimap"></canvas>
       <div id="canvasMessage" class="canvas-message" hidden></div>
+      <div id="liveStatus" class="sr-only" aria-live="polite"></div>
     </section>
 
     <aside class="sidebar right-panel">
@@ -433,7 +570,9 @@ footer {
         <p id="componentSubtitle">Click any circuit block to view its role and exact connections.</p>
         <div id="componentBadges" class="badges"></div>
         <p id="componentDescription" class="description"></p>
+        <dl id="componentDetails" class="detail-grid"></dl>
         <div id="componentNotes" class="note-list"></div>
+        <div id="componentLinks" class="inspector-links"></div>
       </section>
 
       <section>
@@ -441,10 +580,10 @@ footer {
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>Pin</th><th>Signal</th><th>Connects to</th></tr>
+              <tr><th>Module pin</th><th>Project signal</th><th>Controller pin</th><th>Direction</th><th>Electrical type</th><th>Purpose</th><th>Important note</th></tr>
             </thead>
             <tbody id="pinTableBody">
-              <tr><td colspan="3">No component selected.</td></tr>
+              <tr><td colspan="7">No component selected.</td></tr>
             </tbody>
           </table>
         </div>
@@ -476,10 +615,27 @@ footer {
         <li>Only after the basic system is stable, add the optional Linux SDR host branch.</li>
       </ol>
     </article>
+    <article class="mode-content" id="busesAndSignals">
+      <h2>Buses and Signals</h2>
+      <p class="description">Select a card to highlight the complete bus in the diagram. Labels supplement colour so the view remains understandable without colour perception.</p>
+      <div id="busLearningCards" class="bus-grid"></div>
+    </article>
+    <article class="mode-content">
+      <h2>Measurement comparison</h2>
+      <div id="comparisonCards" class="comparison-grid"></div>
+    </article>
+    <article class="mode-content">
+      <h2>Beginner learning path</h2>
+      <div id="learningCards" class="learning-grid"></div>
+    </article>
+    <article class="mode-content">
+      <h2>Quick glossary</h2>
+      <div id="glossaryCards" class="learning-grid"></div>
+    </article>
   </section>
 
   <footer>
-    <p>DarkStar RF Lab · Offline canvas guide · Revision 1.0</p>
+    <p>DarkStar RF Lab · Offline component explorer · Design-stage receive-only architecture</p>
   </footer>
 
   <script>
@@ -606,7 +762,8 @@ footer {
         { id: "mosi", label: "MOSI", side: "left", offset: 0.38, signal: "SPI data in", connect: "ESP32 GPIO23" },
         { id: "miso", label: "MISO", side: "left", offset: 0.58, signal: "SPI data out", connect: "ESP32 GPIO19" },
         { id: "ce", label: "CE", side: "left", offset: 0.77, signal: "Radio enable", connect: "ESP32 GPIO16" },
-        { id: "csn", label: "CSN", side: "right", offset: 0.50, signal: "Chip select", connect: "ESP32 GPIO17" }
+        { id: "csn", label: "CSN", side: "right", offset: 0.50, signal: "Chip select", connect: "ESP32 GPIO17" },
+        { id: "irq", label: "IRQ", side: "bottom", offset: 0.72, signal: "Optional active-low interrupt", connect: "Not connected in current allocation; poll over SPI" }
       ]
     },
     {
@@ -622,7 +779,8 @@ footer {
         { id: "mosi", label: "MOSI", side: "left", offset: 0.38, signal: "SPI data in", connect: "ESP32 GPIO23" },
         { id: "miso", label: "MISO", side: "left", offset: 0.58, signal: "SPI data out", connect: "ESP32 GPIO19" },
         { id: "ce", label: "CE", side: "left", offset: 0.77, signal: "Radio enable", connect: "ESP32 GPIO25" },
-        { id: "csn", label: "CSN", side: "right", offset: 0.50, signal: "Chip select", connect: "ESP32 GPIO26" }
+        { id: "csn", label: "CSN", side: "right", offset: 0.50, signal: "Chip select", connect: "ESP32 GPIO26" },
+        { id: "irq", label: "IRQ", side: "bottom", offset: 0.72, signal: "Optional active-low interrupt", connect: "Not connected in current allocation; poll over SPI" }
       ]
     },
     {
@@ -638,7 +796,8 @@ footer {
         { id: "mosi", label: "MOSI", side: "left", offset: 0.38, signal: "SPI data in", connect: "ESP32 GPIO23" },
         { id: "miso", label: "MISO", side: "left", offset: 0.58, signal: "SPI data out", connect: "ESP32 GPIO19" },
         { id: "ce", label: "CE", side: "left", offset: 0.77, signal: "Radio enable", connect: "ESP32 GPIO32" },
-        { id: "csn", label: "CSN", side: "right", offset: 0.50, signal: "Chip select", connect: "ESP32 GPIO33" }
+        { id: "csn", label: "CSN", side: "right", offset: 0.50, signal: "Chip select", connect: "ESP32 GPIO33" },
+        { id: "irq", label: "IRQ", side: "bottom", offset: 0.72, signal: "Optional active-low interrupt", connect: "Not connected in current allocation; poll over SPI" }
       ]
     },
     {
@@ -654,7 +813,8 @@ footer {
         { id: "mosi", label: "MOSI", side: "left", offset: 0.38, signal: "SPI data in", connect: "ESP32 GPIO23" },
         { id: "miso", label: "MISO", side: "left", offset: 0.58, signal: "SPI data out", connect: "ESP32 GPIO19" },
         { id: "csn", label: "CSN", side: "left", offset: 0.78, signal: "Chip select", connect: "ESP32 GPIO27" },
-        { id: "gdo0", label: "GDO0", side: "right", offset: 0.50, signal: "Interrupt/data ready", connect: "ESP32 GPIO34" }
+        { id: "gdo0", label: "GDO0", side: "right", offset: 0.50, signal: "Interrupt/data ready", connect: "ESP32 GPIO34" },
+        { id: "gdo2", label: "GDO2", side: "bottom", offset: 0.72, signal: "Configurable digital output", connect: "Not connected in current allocation" }
       ]
     },
 
@@ -672,7 +832,8 @@ footer {
         { id: "miso", label: "MISO", side: "right", offset: 0.49, signal: "UI SPI return", connect: "ESP32 GPIO35" },
         { id: "cs", label: "CS", side: "right", offset: 0.66, signal: "Chip select", connect: "ESP32 GPIO4" },
         { id: "dc", label: "D/C", side: "right", offset: 0.82, signal: "Data/command", connect: "ESP32 GPIO2" },
-        { id: "rst", label: "RST", side: "left", offset: 0.50, signal: "Display reset", connect: "MCP23017 GPA5" }
+        { id: "rst", label: "RST", side: "left", offset: 0.50, signal: "Display reset", connect: "MCP23017 GPA5" },
+        { id: "bl", label: "LED/BL", side: "bottom", offset: 0.72, signal: "Backlight power/control", connect: "Breakout-dependent supply or rated driver" }
       ]
     },
     {
@@ -706,7 +867,11 @@ footer {
         { id: "gpa2", label: "GPA2 LEFT", side: "right", offset: 0.65, signal: "Button input", connect: "LEFT button to GND" },
         { id: "gpa3", label: "GPA3 RIGHT", side: "right", offset: 0.76, signal: "Button input", connect: "RIGHT button to GND" },
         { id: "gpa4", label: "GPA4 SELECT", side: "right", offset: 0.87, signal: "Button input", connect: "SELECT button to GND" },
-        { id: "gpa5", label: "GPA5 TFT_RST", side: "left", offset: 0.52, signal: "TFT reset output", connect: "ILI9341 RST" }
+        { id: "gpa5", label: "GPA5 TFT_RST", side: "left", offset: 0.52, signal: "TFT reset output", connect: "ILI9341 RST" },
+        { id: "addr", label: "A0/A1/A2", side: "left", offset: 0.68, signal: "I²C address straps", connect: "GND / GND / GND for 0x20" },
+        { id: "reset", label: "RESET", side: "left", offset: 0.80, signal: "Active-low expander reset", connect: "3.3 V through approximately 10 kΩ" },
+        { id: "ints", label: "INTA/INTB", side: "bottom", offset: 0.28, signal: "Optional interrupt outputs", connect: "Not connected in current allocation" },
+        { id: "spare", label: "GPA6/7 + GPB0–7", side: "bottom", offset: 0.68, signal: "Spare GPIO expansion", connect: "Unused; define safe directions and pulls in firmware" }
       ]
     },
     {
@@ -747,7 +912,9 @@ footer {
         { id: "vcc", label: "VCC 3V3", side: "top", signal: "3.3 V logic", connect: "Logic rail" },
         { id: "gnd", label: "GND", side: "bottom", signal: "Ground", connect: "Ground plane" },
         { id: "sda", label: "SDA", side: "left", offset: 0.35, signal: "I²C data", connect: "ESP32 GPIO21" },
-        { id: "scl", label: "SCL", side: "left", offset: 0.68, signal: "I²C clock", connect: "ESP32 GPIO22" }
+        { id: "scl", label: "SCL", side: "left", offset: 0.68, signal: "I²C clock", connect: "ESP32 GPIO22" },
+        { id: "cell", label: "CELL/VBAT", side: "right", offset: 0.35, signal: "Battery sense/supply", connect: "Compatible protected single-cell path; design not final" },
+        { id: "alrt", label: "ALRT", side: "right", offset: 0.70, signal: "Optional active-low alert", connect: "Not connected in current allocation" }
       ]
     },
     {
@@ -762,7 +929,10 @@ footer {
         { id: "sda", label: "SDA", side: "left", offset: 0.25, signal: "I²C data", connect: "ESP32 GPIO21" },
         { id: "scl", label: "SCL", side: "left", offset: 0.48, signal: "I²C clock", connect: "ESP32 GPIO22" },
         { id: "a0", label: "A0 RF_PWR", side: "right", offset: 0.35, signal: "Scaled detector voltage", connect: "AD8318 divider output" },
-        { id: "a1", label: "A1 LIGHT", side: "right", offset: 0.70, signal: "Ambient light voltage", connect: "TEMT6000 OUT" }
+        { id: "a1", label: "A1 LIGHT", side: "right", offset: 0.70, signal: "Ambient light voltage", connect: "TEMT6000 OUT" },
+        { id: "a23", label: "A2/A3", side: "bottom", offset: 0.30, signal: "Spare analogue inputs", connect: "Unused; keep within GND–VDD" },
+        { id: "addr", label: "ADDR", side: "bottom", offset: 0.58, signal: "I²C address selection", connect: "Strap for a unique address; exact breakout link TBD" },
+        { id: "alrt", label: "ALRT/RDY", side: "bottom", offset: 0.82, signal: "Optional comparator/ready output", connect: "Not connected in current allocation" }
       ]
     },
     {
@@ -774,7 +944,8 @@ footer {
       pins: [
         { id: "vcc", label: "VCC", side: "top", signal: "Module power", connect: "Per breakout specification" },
         { id: "gnd", label: "GND", side: "bottom", signal: "Ground", connect: "Ground plane" },
-        { id: "tx", label: "TX", side: "left", offset: 0.50, signal: "GPS serial output", connect: "ESP32 GPIO36" }
+        { id: "tx", label: "TX", side: "left", offset: 0.38, signal: "GPS serial output", connect: "ESP32 GPIO36" },
+        { id: "rx", label: "RX", side: "left", offset: 0.68, signal: "GPS serial input", connect: "Not connected for normal receive-only tagging" }
       ]
     },
     {
@@ -799,7 +970,8 @@ footer {
         { id: "vcc", label: "VCC 5V", side: "top", signal: "5 V", connect: "5 V rail" },
         { id: "gnd", label: "GND", side: "bottom", signal: "Ground", connect: "Ground plane" },
         { id: "in", label: "A", side: "left", offset: 0.50, signal: "3.3 V data", connect: "ESP32 GPIO15" },
-        { id: "out", label: "Y", side: "right", offset: 0.50, signal: "5 V data", connect: "WS2812 DIN via 330 Ω" }
+        { id: "out", label: "Y", side: "right", offset: 0.50, signal: "5 V data", connect: "WS2812 DIN via 330 Ω" },
+        { id: "oe", label: "OE̅", side: "bottom", offset: 0.50, signal: "Active-low output enable", connect: "Tie low for the selected channel; do not float" }
       ]
     },
     {
@@ -811,7 +983,8 @@ footer {
       pins: [
         { id: "vcc", label: "5V", side: "top", signal: "5 V", connect: "5 V rail" },
         { id: "gnd", label: "GND", side: "bottom", signal: "Ground", connect: "Ground plane" },
-        { id: "din", label: "DIN", side: "left", offset: 0.50, signal: "Buffered data", connect: "74AHCT125 through 330 Ω" }
+        { id: "din", label: "DIN", side: "left", offset: 0.50, signal: "Buffered data", connect: "74AHCT125 through 330 Ω" },
+        { id: "dout", label: "DOUT", side: "right", offset: 0.50, signal: "Cascaded pixel output", connect: "Not connected for a single status LED" }
       ]
     },
 
@@ -995,6 +1168,119 @@ footer {
     { from: ["pi","usb"], to: ["hackrf","usb"], layer: "sdr", label: "USB OTG" }
   ];
 
+  const componentDetails = {
+    pwr5: { manufacturer: "Power-system design block", category: "Power", status: "Planned", why: "Provides one protected and predictable entry point for the base system.", role: "Feeds the 5 V star-distribution node after fuse and reverse-polarity protection.", supply: "Regulated 5 V, design target ≥3 A", logic: "Not applicable", interface: "Power", band: "All bands", limitations: "Size the source from measured peak load; this allocation is not a certified power design.", alternatives: "A protected bench supply or certified regulated USB supply." },
+    rail5: { manufacturer: "Power-system design block", category: "Power", status: "Planned", why: "Star wiring reduces shared impedance between noisy digital loads and sensitive RF blocks.", role: "Distributes 5 V to the controller, display, C5, detector and RF regulator.", supply: "5 V", logic: "Not applicable", interface: "Power", band: "All bands", limitations: "Wire gauge, connector rating and bulk capacitance require load testing." },
+    rfldo: { manufacturer: "Low-noise regulator; part TBD", category: "Power", status: "Planned", why: "RF modules can draw fast current pulses that disturb a weak shared rail.", role: "Supplies all nRF24L01 and CC1101 modules from a dedicated low-noise 3.3 V rail.", supply: "5 V in; 3.3 V out; ≥1 A design target", logic: "3.3 V", interface: "Power", band: "2.4 GHz and sub-GHz", limitations: "Regulator choice and thermal margin need prototype validation.", alternatives: "A proven low-noise 3.3 V buck/LDO module with adequate transient response." },
+    gnd: { manufacturer: "PCB/wiring design block", category: "Power", status: "Planned", why: "Every voltage and logic signal needs a common reference and short return path.", role: "Represents the shared ground plane for base-system modules.", supply: "0 V reference", logic: "Common reference", interface: "Ground", band: "All bands", limitations: "A diagram cannot guarantee low impedance; layout controls RF return quality." },
+    esp32: { manufacturer: "Espressif Systems · ESP32 family", category: "Main controller", status: "Planned", why: "Combines UI coordination, storage, buses, GPIO and lightweight observation processing.", role: "Central coordinator for two SPI buses, I²C, GPS UART RX, ADC metadata and status output.", supply: "5 V to development board/VIN; module core 3.3 V", logic: "3.3 V only", interface: "RF SPI, UI SPI, I²C, UART RX, GPIO, ADC", band: "Control plane; 2.4 GHz Wi-Fi capability", limitations: "GPIO34–39 are input-only. GPIO35 suits MISO and GPIO36 suits GPS RX. GPIO2/GPIO5/GPIO15 are boot-strapping pins and external pulls require review. Espressif currently marks the 32D/32U module family NRND.", alternatives: "Review a current external-antenna ESP32 module if moving beyond this documented design allocation.", links: [["Official ESP32-WROOM-32D/32U datasheet", "https://documentation.espressif.com/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.html"]] },
+    nrf1: { manufacturer: "Nordic Semiconductor · nRF24L01+", category: "2.4 GHz receiver", status: "Planned", why: "Divides coarse channel-activity scan work across three independently controlled receivers.", role: "Passive receive observation for the first configured 2.4 GHz scan segment.", supply: "1.9–3.6 V; project rail 3.3 V", logic: "3.3 V", interface: "RF SPI plus dedicated CE and CSN", band: "2.4 GHz ISM", limitations: "RPD is a threshold/activity indication, not calibrated amplitude. PA/LNA variants need strong local decoupling and antenna spacing.", alternatives: "One nRF module for slower scanning, or a receive-only SDR for frequency-selective samples.", links: [["Official nRF24L01+ product specification", "https://docs.nordicsemi.com/bundle/nRF24L01P_PS_v1.0/resource/nRF24L01P_PS_v1.0.pdf"]] },
+    nrf2: { manufacturer: "Nordic Semiconductor · nRF24L01+", category: "2.4 GHz receiver", status: "Planned", why: "Adds parallel scan capacity without sharing CE or CSN.", role: "Passive receive observation for the second configured 2.4 GHz scan segment.", supply: "1.9–3.6 V; project rail 3.3 V", logic: "3.3 V", interface: "Shared RF SPI plus dedicated CE and CSN", band: "2.4 GHz ISM", limitations: "RPD is coarse and uncalibrated; nearby antennas and supply noise can bias observations.", alternatives: "One nRF module or receive-only SDR.", links: [["Official nRF24L01+ product specification", "https://docs.nordicsemi.com/bundle/nRF24L01P_PS_v1.0/resource/nRF24L01P_PS_v1.0.pdf"]] },
+    nrf3: { manufacturer: "Nordic Semiconductor · nRF24L01+", category: "2.4 GHz receiver", status: "Planned", why: "Completes the three-way coarse activity scanner.", role: "Passive receive observation for the third configured 2.4 GHz scan segment.", supply: "1.9–3.6 V; project rail 3.3 V", logic: "3.3 V", interface: "Shared RF SPI plus dedicated CE and CSN", band: "2.4 GHz ISM", limitations: "Not a spectrum analyser and not a calibrated field-strength receiver.", alternatives: "Receive-only SDR for frequency-selective samples.", links: [["Official nRF24L01+ product specification", "https://docs.nordicsemi.com/bundle/nRF24L01P_PS_v1.0/resource/nRF24L01P_PS_v1.0.pdf"]] },
+    cc1101: { manufacturer: "Texas Instruments · CC1101", category: "Sub-GHz receiver", status: "Planned", why: "Provides a configurable narrow-band receive path below 1 GHz.", role: "Passively observes activity in the exact band supported by the chosen module, matching network and antenna.", supply: "1.8–3.6 V; project rail 3.3 V", logic: "3.3 V", interface: "Shared RF SPI, dedicated CSN and GDO0 interrupt", band: "Configured sub-GHz band", limitations: "Coverage and measurements depend on module variant, configuration and antenna. Follow regional rules even for test setups.", alternatives: "Band-specific receiver or receive-only SDR with suitable filtering.", links: [["Official CC1101 datasheet", "https://www.ti.com/lit/ds/symlink/cc1101.pdf"]] },
+    tft: { manufacturer: "Ilitek · ILI9341 controller family", category: "Display", status: "Planned", why: "Makes channel activity, metadata and menus visible without a computer.", role: "Renders the local UI on the shared UI SPI bus.", supply: "Breakout-dependent 3.3 V or 5 V input", logic: "ESP32-facing signals must be 3.3 V safe", interface: "UI SPI; dedicated CS, D/C and expander-driven reset", band: "User interface", limitations: "Verify breakout regulator/level shifters and backlight current before wiring.", alternatives: "Other 3.3 V SPI display with firmware changes." },
+    sd: { manufacturer: "SD Association-compatible breakout", category: "Storage", status: "Planned", why: "Stores observations, configuration and calibration records offline.", role: "Shares UI SPI while using its own active-low CS.", supply: "Breakout-dependent; card core 3.3 V", logic: "3.3 V at the ESP32", interface: "UI SPI with dedicated CS", band: "Data logging", limitations: "Inactive CS must remain high and MISO must tri-state. Some level-shifter breakouts hold MISO and break bus sharing.", alternatives: "SPI flash or a verified tri-state MicroSD breakout." },
+    mcp: { manufacturer: "Microchip · MCP23017", category: "Controls and expansion", status: "Planned", why: "Moves buttons and display reset off scarce ESP32 GPIOs.", role: "I²C GPIO expander at design address 0x20; GPA0–4 read buttons and GPA5 resets the TFT.", supply: "1.8–5.5 V; project rail 3.3 V", logic: "3.3 V", interface: "I²C", band: "User interface", limitations: "A0–A2 must define a unique address; RESET needs a pull-up; SDA/SCL need pull-ups.", alternatives: "PCF8574 with different behaviour, or direct GPIO if enough pins remain.", links: [["Official MCP23017 datasheet", "https://ww1.microchip.com/downloads/aemDocuments/documents/APID/ProductDocuments/DataSheets/MCP23017-Data-Sheet-DS20001952.pdf"]] },
+    buttons: { manufacturer: "Generic momentary switches", category: "Controls", status: "Planned", why: "Provides simple menu navigation without a touch interface.", role: "Five active-low inputs read through MCP23017 internal pull-ups.", supply: "No separate supply", logic: "3.3 V active-low", interface: "GPIO through MCP23017", band: "User interface", limitations: "Debounce in hardware or firmware; each switch closes to common ground.", alternatives: "Rotary encoder or touch controls." },
+    bme: { manufacturer: "Bosch Sensortec · BME280", category: "Environmental sensor", status: "Planned", why: "Adds temperature, humidity and pressure context to RF observation logs.", role: "Supplies environmental metadata over the shared I²C bus.", supply: "1.71–3.6 V; project rail 3.3 V", logic: "3.3 V", interface: "I²C, typically 0x76 or 0x77", band: "Metadata", limitations: "Board heat and airflow affect readings; module pull-ups must not raise the bus above 3.3 V.", alternatives: "BME680/BME688 when additional air-quality sensing is wanted.", links: [["Official BME280 datasheet", "https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bme280-ds002.pdf"]] },
+    fuel: { manufacturer: "Analog Devices/Maxim · MAX17043", category: "Battery sensor", status: "Optional", why: "Estimates single-cell battery state of charge without a current-sense resistor.", role: "Reports optional battery voltage and state-of-charge metadata over I²C.", supply: "2.5–4.5 V device range; verify breakout", logic: "3.3 V I²C", interface: "I²C", band: "Power metadata", limitations: "Use only with a compatible cell and protected charging/power path; never treat the gauge as battery protection.", alternatives: "MAX17048 or a validated power-management module.", links: [["Official MAX17043 datasheet", "https://www.analog.com/media/en/technical-documentation/data-sheets/MAX17043-MAX17044.pdf"]] },
+    ads: { manufacturer: "Texas Instruments · ADS1115", category: "Analogue-to-digital converter", status: "Planned", why: "Provides higher-resolution, programmable-gain readings for the detector and light sensor.", role: "Converts scaled AD8318 voltage on A0 and TEMT6000 voltage on A1 for the ESP32 over I²C.", supply: "2.0–5.5 V; project rail 3.3 V", logic: "3.3 V I²C", interface: "I²C plus analogue inputs", band: "5 GHz detector and ambient metadata", limitations: "Inputs must remain within GND and VDD; choose PGA range for the scaled maximum and calibrate slope/intercept.", alternatives: "ESP32 ADC for lower-accuracy needs or another external ADC.", links: [["Official ADS1115 datasheet", "https://www.ti.com/lit/ds/symlink/ads1115.pdf"]] },
+    gps: { manufacturer: "u-blox · NEO-6M family", category: "Position sensor", status: "Planned", why: "Tags observations with position and accurate GNSS time.", role: "Sends NMEA data from GPS TX to input-only ESP32 GPIO36; GPS RX is normally unnecessary here.", supply: "Breakout-dependent, commonly 3.3–5 V input", logic: "Verify TX level; ESP32 input is 3.3 V", interface: "UART TX → RX", band: "GNSS metadata", limitations: "Antenna placement and clear sky dominate time-to-first-fix; indoor fixes may be slow or unavailable.", alternatives: "Newer u-blox GNSS module.", links: [["Official NEO-6 datasheet", "https://content.u-blox.com/sites/default/files/products/documents/NEO-6_DataSheet_%28GPS.G6-HW-09005%29.pdf"]] },
+    light: { manufacturer: "Vishay · TEMT6000 family", category: "Analogue sensor", status: "Planned", why: "Lets firmware adapt display brightness to ambient light.", role: "Produces an analogue voltage measured on ADS1115 A1.", supply: "Project module rail 3.3 V", logic: "Analogue output scaled within ADS1115 rails", interface: "Analogue/ADC", band: "Ambient metadata", limitations: "Response is approximate and depends on resistor, optics and enclosure.", alternatives: "Digital I²C light sensor.", links: [["Official TEMT6000 datasheet", "https://www.vishay.com/docs/81579/temt6000.pdf"]] },
+    level: { manufacturer: "Texas Instruments · 74AHCT125 family", category: "Logic buffer", status: "Optional", why: "A 5 V WS2812 may not reliably recognise a direct 3.3 V high level.", role: "Buffers ESP32 GPIO15 to a 5 V logic output; keep output enable asserted and use a series resistor.", supply: "5 V", logic: "3.3 V-compatible AHCT input; 5 V output", interface: "GPIO buffer", band: "Status indication", limitations: "Tie the selected active-low OE correctly and do not leave unused inputs floating.", alternatives: "74HCT125 or a purpose-built unidirectional level shifter.", links: [["Official SN74AHCT125 datasheet", "https://www.ti.com/lit/ds/symlink/sn74ahct125.pdf"]] },
+    led: { manufacturer: "Worldsemi · WS2812B family", category: "Status indicator", status: "Optional", why: "Provides compact colour-coded state, storage and warning indication.", role: "Receives buffered serial colour data through 330 Ω.", supply: "5 V", logic: "5 V data after buffer", interface: "Timing-sensitive one-wire GPIO", band: "User interface", limitations: "Brightness can draw substantial current; add local bulk/100 nF decoupling and limit brightness in firmware.", alternatives: "Discrete LEDs through resistors." },
+    c5: { manufacturer: "Espressif Systems · ESP32-C5", category: "Wi-Fi survey coprocessor", status: "Planned", why: "Adds 5 GHz-capable Wi-Fi discovery that the main ESP32-WROOM-32U cannot provide.", role: "Reports visible 2.4/5 GHz APs, channels, RSSI and optionally security modes to the main controller.", supply: "Separate 5 V DevKit input", logic: "3.3 V; common ground", interface: "Conceptual I²C link on C5 GPIO2/GPIO3", band: "2.4 and 5 GHz Wi-Fi", limitations: "Wi-Fi survey results are not raw spectrum samples. GPIO2/GPIO3 mapping must be verified against exact DevKit revision and firmware.", alternatives: "Another dual-band Wi-Fi survey board with a defined host protocol.", links: [["Official ESP32-C5-DevKitC-1 guide", "https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32c5/esp32-c5-devkitc-1/user_guide.html"]] },
+    ant5: { manufacturer: "50 Ω antenna; model TBD", category: "5 GHz detector chain", status: "Planned", why: "Couples received 5 GHz energy into the detector chain.", role: "Feeds the selected band-pass filter through a 50 Ω path.", supply: "Passive", logic: "Not applicable", interface: "50 Ω RF", band: "Selected 5 GHz passband", limitations: "Antenna bandwidth, pattern, connector and cable loss require selection and calibration." },
+    bpf5: { manufacturer: "RF filter; model TBD", category: "5 GHz detector chain", status: "Planned", why: "Rejects out-of-band energy before the broadband detector.", role: "Defines the frequency region contributing to aggregate AD8318 power.", supply: "Passive", logic: "Not applicable", interface: "50 Ω RF", band: "Target approximately 5.15–5.85 GHz; exact part TBD", limitations: "Insertion loss and actual passband must be measured and included in calibration." },
+    att5: { manufacturer: "50 Ω fixed attenuator; value TBD", category: "5 GHz detector chain", status: "Planned", why: "Protects the detector and improves impedance consistency.", role: "Reduces the filtered input by the selected fixed loss before AD8318.", supply: "Passive", logic: "Not applicable", interface: "50 Ω RF", band: "5 GHz", limitations: "The shown 10 dB is a design starting point; value and power rating require verification." },
+    ad8318: { manufacturer: "Analog Devices · AD8318", category: "RF power detector", status: "Planned", why: "Converts broadband RF power to a DC voltage that a low-speed ADC can measure.", role: "Measures aggregate energy within the upstream filter passband; VOUT is scaled before ADS1115 A0.", supply: "4.5–5.5 V; project rail 5 V", logic: "Analogue voltage output", interface: "50 Ω RF input and analogue VOUT", band: "Up to 8 GHz device range; selected 5 GHz path", limitations: "Cannot identify individual frequencies. Calibration needs known power, full chain loss, slope and intercept; module VOUT may approach 4.9 V.", alternatives: "Other calibrated log detector or receive-only SDR for frequency selectivity.", links: [["Official AD8318 datasheet", "https://www.analog.com/media/en/technical-documentation/data-sheets/ad8318.pdf"]] },
+    divider: { manufacturer: "Passive resistor network", category: "Analogue conditioning", status: "Planned", why: "Prevents detector VOUT from exceeding the 3.3 V ADS1115 rail.", role: "A nominal 10 kΩ/20 kΩ divider scales 4.9 V to about 3.27 V.", supply: "Passive", logic: "Analogue", interface: "Analogue/ADC", band: "5 GHz detector output", limitations: "Use tolerance-aware values, verify worst-case VOUT and include divider ratio in calibration." },
+    hackrf: { manufacturer: "Great Scott Gadgets · HackRF One", category: "Optional SDR", status: "Optional", why: "Adds frequency-selective receive samples and waterfall views unavailable from activity flags or a log detector.", role: "Receive-only SDR connected by USB to the Linux host.", supply: "USB", logic: "USB", interface: "USB 2.0 and 50 Ω SMA RF input", band: "1 MHz–6 GHz nominal device coverage", limitations: "Requires filtering, a suitable antenna and host processing. This project documents receive use only.", alternatives: "Other receive-only-capable SDR supported by the host.", links: [["Official HackRF One documentation", "https://hackrf.readthedocs.io/en/latest/hackrf_one.html"]] },
+    pi: { manufacturer: "Raspberry Pi · Zero 2 W", category: "Optional Linux host", status: "Optional", why: "An ESP32 cannot ingest and process a full HackRF USB sample stream.", role: "Hosts receive-only SDR software and USB OTG connection.", supply: "Independent regulated 5 V / 2.5 A recommended", logic: "3.3 V GPIO if a future local link is designed", interface: "USB OTG and optional local network", band: "SDR host", limitations: "Keep its high-current supply independent; host software and data link remain future work.", alternatives: "A more capable Linux SBC or computer.", links: [["Official Raspberry Pi Zero 2 W page", "https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/"]] }
+  };
+
+  const buses = {
+    "rf-spi": { title: "RF SPI", lines: "GPIO18 SCK · GPIO23 MOSI · GPIO19 MISO · unique CE/CSN", voltage: "3.3 V", controller: "ESP32-WROOM-32U", components: ["esp32", "nrf1", "nrf2", "nrf3", "cc1101"], explanation: "SCK, MOSI and MISO are shared. Only one peripheral CSN is low during a transaction; every inactive device must release MISO. nRF CE controls radio state and is not the same as active-low CSN." },
+    "ui-spi": { title: "UI SPI", lines: "GPIO14 SCK · GPIO13 MOSI · GPIO35 MISO · GPIO4/5 CS", voltage: "3.3 V logic", controller: "ESP32-WROOM-32U", components: ["esp32", "tft", "sd", "mcp"], explanation: "The display and MicroSD share clock and data. Their independent CS lines idle high. GPIO35 is input-only, which is suitable for MISO. Verify that every breakout tri-states MISO when inactive." },
+    i2c: { title: "I²C", lines: "GPIO21 SDA · GPIO22 SCL · approximately 4.7 kΩ pull-ups", voltage: "3.3 V", controller: "ESP32-WROOM-32U", components: ["esp32", "mcp", "bme", "fuel", "ads", "c5"], explanation: "SDA and SCL form a shared two-wire, addressed bus with open-drain signalling and pull-ups to 3.3 V. Every device needs a unique address and common ground." },
+    uart: { title: "UART", lines: "NEO-6M TX → ESP32 GPIO36 RX", voltage: "Verify GPS breakout TX; ESP32 is 3.3 V", controller: "NEO-6M sends; main ESP32 receives", components: ["gps", "esp32"], explanation: "UART crosses transmitter to receiver and both ends must agree on baud and framing. Normal receive-only GPS use needs the module TX line and common ground; GPS RX may remain disconnected." },
+    adc: { title: "ADC / analogue", lines: "ADS1115 A0 detector · A1 ambient light", voltage: "0 V to ADS1115 VDD; project rail 3.3 V", controller: "ADS1115 converts; ESP32 reads over I²C", components: ["ad8318", "divider", "ads", "light", "esp32"], explanation: "Analogue voltage is continuous; the ADC reports a number. Select PGA gain so no input exceeds full scale or VDD, then apply detector-chain divider, slope, intercept and RF-loss calibration." },
+    gpio: { title: "GPIO", lines: "CE · CS/CSN · D/C · reset · buttons · GDO0 · LED data", voltage: "3.3 V logic unless buffered", controller: "ESP32 and MCP23017", components: ["esp32", "nrf1", "nrf2", "nrf3", "cc1101", "tft", "sd", "mcp", "buttons", "level", "led"], explanation: "GPIO may be input, output or interrupt. Buttons are active-low with pull-ups; CS lines idle high. GPIO34–39 are input-only and ESP32 boot-strapping pins require care." },
+    power: { title: "Power", lines: "Protected 5 V · low-noise 3.3 V RF · local 100 nF + 10 µF", voltage: "5 V and regulated 3.3 V", controller: "Star distribution", components: ["pwr5", "rail5", "rfldo", "esp32", "nrf1", "nrf2", "nrf3", "cc1101", "c5", "ad8318", "level", "led"], explanation: "Supply voltage is not the same as logic voltage. Capacity, regulation, decoupling and low-impedance return paths matter. Fit 100–220 µF bulk capacitance near the RF group." },
+    ground: { title: "Ground", lines: "Common 0 V reference · short RF returns", voltage: "0 V reference", controller: "Shared plane/star point", components: components.map(c => c.id), explanation: "All base-system modules share a common reference. Keep RF returns short and do not route display or LED current through sensitive RF ground paths. The optional Raspberry Pi uses an independent supply." }
+  };
+
+  const signalPaths = {
+    "2.4-rx": { title: "2.4 GHz receive observation", steps: ["rfldo", "nrf1", "esp32", "tft"], notes: ["The clean 3.3 V rail stabilises the receiver.", "An nRF24L01 reports coarse channel activity/RPD while the other two can scan other segments.", "The controller coordinates shared SPI and interprets observations.", "The display renders activity; no interference is transmitted."] },
+    "subghz-rx": { title: "Sub-GHz receive observation", steps: ["rfldo", "cc1101", "esp32", "tft"], notes: ["The dedicated RF rail reduces digital noise.", "CC1101 tunes within the chosen module/antenna band and raises GDO0 when configured.", "The ESP32 reads the selected device over RF SPI.", "Results are displayed as design-stage observations, not certified measurements."] },
+    "wifi-survey": { title: "5 GHz Wi-Fi survey", steps: ["c5", "esp32", "tft", "sd"], notes: ["ESP32-C5 discovers 2.4/5 GHz Wi-Fi AP metadata.", "The conceptual I²C link passes channel/RSSI records; GPIO2/GPIO3 need board verification.", "The main UI presents survey results.", "MicroSD can log observations when its CS is selected."] },
+    "detector": { title: "5 GHz RF-power detector", steps: ["ant5", "bpf5", "att5", "ad8318", "divider", "ads", "esp32"], notes: ["A 50 Ω antenna receives energy.", "The filter defines which 5 GHz passband contributes.", "The fixed pad protects the detector and enters the calibration budget.", "AD8318 converts aggregate in-band power to a logarithmic voltage.", "The divider keeps VOUT within the 3.3 V ADC rail.", "ADS1115 digitises A0 with an appropriate PGA setting.", "Firmware applies measured slope, intercept and path-loss calibration."] },
+    display: { title: "Display rendering", steps: ["esp32", "tft"], notes: ["The ESP32 prepares the UI frame.", "ILI9341 receives pixels over UI SPI with its own CS and D/C."] },
+    logging: { title: "MicroSD logging", steps: ["esp32", "sd"], notes: ["The controller formats an observation record.", "MicroSD receives it over shared UI SPI while TFT CS remains high."] },
+    gps: { title: "GPS tagging", steps: ["gps", "esp32", "sd"], notes: ["GPS obtains time and location with a suitable antenna view.", "Module TX sends serial data to input-only GPIO36.", "Validated fixes can be attached to log records."] },
+    environment: { title: "Environmental sensing", steps: ["bme", "esp32", "sd"], notes: ["BME280 samples temperature, humidity and pressure.", "The main ESP32 reads addressed I²C data.", "Metadata can accompany passive RF observations."] },
+    buttons: { title: "Button input", steps: ["buttons", "mcp", "esp32", "tft"], notes: ["A press closes an active-low input to ground.", "MCP23017 reports the debounced state over I²C.", "The controller updates menu state.", "The display renders the new selection."] },
+    sdr: { title: "Optional SDR receive", steps: ["hackrf", "pi"], notes: ["HackRF One supplies frequency-selective receive samples only.", "The independent Linux host processes spectra/waterfalls; the ESP32 cannot handle the full stream."] }
+  };
+
+  const learningSteps = [
+    { title: "1. Main controller", component: "esp32", text: "The ESP32-WROOM-32U is the coordinator: it schedules receivers, reads sensors, updates the UI and writes logs." },
+    { title: "2. Communication buses", component: "esp32", text: "Shared buses reduce pin count. SPI uses chip selects, I²C uses addresses, UART crosses TX to RX and ADC channels measure voltage." },
+    { title: "3. Why three nRF24L01 modules?", component: "nrf1", text: "Three receivers can divide coarse 2.4 GHz scan work. Their RPD output indicates activity, not calibrated spectrum amplitude." },
+    { title: "4. Shared SPI, separate selects", component: "nrf2", text: "SCK, MOSI and MISO are shared; CE and CSN remain dedicated. Only one CSN is asserted for each transaction." },
+    { title: "5. A separate RF regulator", component: "rfldo", text: "Fast PA/LNA current pulses and digital noise make a dedicated low-noise 3.3 V rail and local capacitors important." },
+    { title: "6. Survey versus spectrum", component: "c5", text: "ESP32-C5 reports Wi-Fi AP/channel/RSSI metadata. That is different from raw frequency-selective spectrum samples." },
+    { title: "7. AD8318 detection", component: "ad8318", text: "The detector turns total power inside the filter passband into a logarithmic voltage; it cannot identify individual transmitters or frequencies." },
+    { title: "8. ADS1115 conversion", component: "ads", text: "The divider protects A0, the ADC digitises voltage, and calibration converts that reading into an estimated input power." },
+    { title: "9. GPS and metadata", component: "gps", text: "GPS, environment, battery and light readings add context to observation logs without changing the receive-only RF paths." },
+    { title: "10. Complete system", component: "esp32", text: "Specialised receivers observe, the controller coordinates, the UI explains, and storage records. Each measurement type has distinct limits." }
+  ];
+
+  const comparisons = [
+    { title: "ESP32-WROOM-32U vs ESP32-C5", text: "The WROOM-32U is the main UI and peripheral coordinator. The C5 is a planned dual-band Wi-Fi survey coprocessor; its conceptual GPIO2/GPIO3 host link needs exact-board verification." },
+    { title: "nRF24L01 vs CC1101", text: "nRF24L01 provides coarse activity indication in 2.4 GHz channels. CC1101 is a configurable sub-GHz transceiver used here only as a tuned receiver. Neither is a calibrated wideband spectrum analyser." },
+    { title: "C5 vs AD8318 vs HackRF", text: "C5 yields Wi-Fi network metadata; AD8318 yields aggregate power inside a filter passband; optional HackRF yields frequency-selective receive samples for a Linux-hosted spectrum/waterfall." }
+  ];
+
+  const glossary = [
+    ["SCK", "SPI clock generated by the controller."],
+    ["MOSI / MISO", "Controller-to-peripheral and peripheral-to-controller SPI data."],
+    ["CS / CSN", "Dedicated active-low SPI selection; inactive devices idle high and release MISO."],
+    ["CE", "nRF24L01 radio-state control, separate from the SPI chip select."],
+    ["RPD", "nRF24L01 received-power threshold indication; coarse and uncalibrated."],
+    ["RSSI", "A receiver-specific estimate of received signal strength, not automatically comparable across hardware."],
+    ["ADC", "Analogue-to-digital converter: turns a voltage into a number."],
+    ["Decoupling", "Local capacitance and short paths that supply fast current and reduce rail noise."],
+    ["50 Ω path", "The standard RF impedance expected by the detector-chain antenna, filter, pad and coax."],
+    ["Aggregate power", "Combined energy in the filter passband; it does not identify individual frequencies."]
+  ];
+
+  function inferWireBus(wire) {
+    if (/I²C/.test(wire.label)) return "i2c";
+    if (/GPS TX/.test(wire.label)) return "uart";
+    if (/LIGHT|VOUT|Scaled|RF input|50 Ω|Filtered 5 GHz/.test(wire.label)) return "adc";
+    if (wire.layer === "ui") return "ui-spi";
+    if (wire.layer === "rf24" || wire.layer === "subghz") return /SCK|MOSI|MISO|CSN|CE/.test(wire.label) ? "rf-spi" : "gpio";
+    if (wire.layer === "power" || /\b5 V\b|3V3_RF/.test(wire.label)) return "power";
+    return "gpio";
+  }
+
+  wires.forEach((wire, index) => { wire.id = `wire-${index}`; wire.bus = inferWireBus(wire); });
+  components.forEach(component => {
+    Object.assign(component, componentDetails[component.id] || {});
+    component.status ||= component.layer === "sdr" ? "Optional" : "Planned";
+    component.category ||= layerMeta[component.layer].label;
+    component.manufacturer ||= "Design block";
+    component.why ||= component.description;
+    component.role ||= component.description;
+    component.supply ||= "See pin table";
+    component.logic ||= "See module documentation";
+    component.interface ||= component.badges.join(", ");
+    component.band ||= component.badges.join(", ");
+    component.limitations ||= component.notes.join(" ");
+    component.alternatives ||= "Choose only after checking voltage, logic and firmware compatibility.";
+  });
+
   const summaryGroups = [
     {
       title: "Main ESP32 — RF receiver bus",
@@ -1046,6 +1332,56 @@ footer {
   let showPinLabels = true;
   let showWireLabels = true;
   let showGrid = true;
+  let activeMode = "component";
+  let activeBus = "rf-spi";
+  let activePath = "2.4-rx";
+  let guideStep = 0;
+
+  function connectedIds(componentId) {
+    const ids = new Set();
+    wires.forEach(wire => {
+      if (wire.from[0] === componentId) ids.add(wire.to[0]);
+      if (wire.to[0] === componentId) ids.add(wire.from[0]);
+    });
+    return [...ids];
+  }
+
+  function highlightState() {
+    const componentsOn = new Set();
+    const wiresOn = new Set();
+    if (activeMode === "component" && selectedId) {
+      componentsOn.add(selectedId);
+      connectedIds(selectedId).forEach(id => componentsOn.add(id));
+      ["pwr5", "rail5", "rfldo", "gnd"].forEach(id => componentsOn.add(id));
+      wires.forEach(wire => {
+        if (wire.from[0] === selectedId || wire.to[0] === selectedId ||
+            (componentsOn.has(wire.from[0]) && componentsOn.has(wire.to[0]) && wire.bus === "power")) wiresOn.add(wire.id);
+      });
+    } else if (activeMode === "bus") {
+      buses[activeBus].components.forEach(id => componentsOn.add(id));
+      wires.filter(wire => wire.bus === activeBus).forEach(wire => wiresOn.add(wire.id));
+    } else if (activeMode === "power") {
+      buses.power.components.forEach(id => componentsOn.add(id));
+      componentsOn.add("gnd");
+      wires.filter(wire => wire.bus === "power").forEach(wire => wiresOn.add(wire.id));
+    } else if (activeMode === "signal") {
+      const path = signalPaths[activePath];
+      path.steps.forEach((id, index) => { if (index <= guideStep) componentsOn.add(id); });
+      wires.forEach(wire => {
+        const fromIndex = path.steps.indexOf(wire.from[0]);
+        const toIndex = path.steps.indexOf(wire.to[0]);
+        if (fromIndex >= 0 && toIndex >= 0 && Math.max(fromIndex, toIndex) <= guideStep) wiresOn.add(wire.id);
+      });
+    } else if (activeMode === "learning") {
+      componentsOn.add(learningSteps[guideStep].component);
+      connectedIds(learningSteps[guideStep].component).forEach(id => componentsOn.add(id));
+    }
+    return { componentsOn, wiresOn, active: componentsOn.size > 0 };
+  }
+
+  function announce(message) {
+    document.getElementById("liveStatus").textContent = message;
+  }
 
   function resizeCanvas() {
     const rect = canvas.getBoundingClientRect();
@@ -1136,6 +1472,8 @@ footer {
     const a = toScreen(pinPoint(...wire.from));
     const b = toScreen(pinPoint(...wire.to));
     const color = layerMeta[wire.layer].color;
+    const highlight = highlightState();
+    const isHighlighted = !highlight.active || highlight.wiresOn.has(wire.id);
 
     const horizontalBias = Math.abs(b.x - a.x) >= Math.abs(b.y - a.y);
     let c1, c2;
@@ -1151,22 +1489,22 @@ footer {
 
     ctx.save();
     ctx.strokeStyle = color;
-    ctx.globalAlpha = 0.82;
-    ctx.lineWidth = Math.max(1.25, 2.2 * Math.min(view.scale, 1.3));
+    ctx.globalAlpha = isHighlighted ? 0.92 : 0.10;
+    ctx.lineWidth = Math.max(1.25, (isHighlighted ? 3 : 1.5) * Math.min(view.scale, 1.3));
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
     ctx.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, b.x, b.y);
     ctx.stroke();
 
     ctx.fillStyle = color;
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = isHighlighted ? 1 : .12;
     for (const p of [a, b]) {
       ctx.beginPath();
       ctx.arc(p.x, p.y, Math.max(2.4, 4 * Math.min(view.scale, 1.2)), 0, Math.PI * 2);
       ctx.fill();
     }
 
-    if (showWireLabels && view.scale > 0.34) {
+    if (showWireLabels && view.scale > 0.34 && isHighlighted) {
       const t = 0.52;
       const mt = 1 - t;
       const lx = mt ** 3 * a.x + 3 * mt ** 2 * t * c1.x + 3 * mt * t ** 2 * c2.x + t ** 3 * b.x;
@@ -1198,10 +1536,13 @@ footer {
     const w = c.w * view.scale;
     const h = c.h * view.scale;
     const color = layerMeta[c.layer].color;
-    const isSelected = c.id === selectedId;
+    const highlight = highlightState();
+    const isDimmed = highlight.active && !highlight.componentsOn.has(c.id);
+    const isSelected = c.id === selectedId || (activeMode === "signal" && signalPaths[activePath].steps[guideStep] === c.id) || (activeMode === "learning" && learningSteps[guideStep].component === c.id);
     const isHovered = c.id === hoveredId;
 
     ctx.save();
+    ctx.globalAlpha = isDimmed ? .18 : 1;
     ctx.shadowColor = isSelected ? color : "rgba(0,0,0,.45)";
     ctx.shadowBlur = isSelected ? 28 : 12;
     ctx.shadowOffsetY = 5;
@@ -1240,8 +1581,16 @@ footer {
     }
 
     for (const pin of c.pins) {
+      const pinOnActiveBus = wires.some(wire => wire.bus === activeBus &&
+        ((wire.from[0] === c.id && wire.from[1] === pin.id) || (wire.to[0] === c.id && wire.to[1] === pin.id)));
+      const pinIsPower = pinElectricalType(pin) === "Power";
+      const pinIsGround = pinElectricalType(pin) === "Ground";
+      const dimPin = (activeMode === "bus" && !pinOnActiveBus && !(activeBus === "power" && pinIsPower) && !(activeBus === "ground" && pinIsGround)) ||
+        (activeMode === "power" && !pinIsPower && !pinIsGround);
       const wp = pinPoint(c.id, pin.id);
       const sp = toScreen(wp);
+      ctx.save();
+      if (dimPin) ctx.globalAlpha = .14;
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.arc(sp.x, sp.y, Math.max(2, 4.5 * view.scale), 0, Math.PI * 2);
@@ -1268,6 +1617,7 @@ footer {
           ctx.fillText(pin.label, sp.x, sp.y + 7);
         }
       }
+      ctx.restore();
     }
 
     ctx.restore();
@@ -1353,6 +1703,8 @@ footer {
     const description = document.getElementById("componentDescription");
     const badges = document.getElementById("componentBadges");
     const notes = document.getElementById("componentNotes");
+    const details = document.getElementById("componentDetails");
+    const links = document.getElementById("componentLinks");
     const pinBody = document.getElementById("pinTableBody");
 
     if (!c) {
@@ -1361,7 +1713,9 @@ footer {
       description.textContent = "";
       badges.innerHTML = "";
       notes.innerHTML = "";
-      pinBody.innerHTML = '<tr><td colspan="3">No component selected.</td></tr>';
+      details.innerHTML = "";
+      links.innerHTML = "";
+      pinBody.innerHTML = '<tr><td colspan="7">No component selected.</td></tr>';
       draw();
       return;
     }
@@ -1370,14 +1724,74 @@ footer {
     subtitle.textContent = c.subtitle;
     description.textContent = c.description;
     badges.innerHTML = c.badges.map(b => `<span>${escapeHtml(b)}</span>`).join("");
-    notes.innerHTML = c.notes.map(n => `<div class="note">${escapeHtml(n)}</div>`).join("");
+    const related = connectedIds(c.id).map(id => findComponent(id)?.title).filter(Boolean).join(", ") || "No direct diagram connection";
+    details.innerHTML = [
+      ["Family", c.manufacturer], ["Category / status", `${c.category} · ${c.status}`],
+      ["Why included", c.why], ["Project role", c.role],
+      ["Supply / logic", `${c.supply} · ${c.logic}`], ["Interface / band", `${c.interface} · ${c.band}`],
+      ["Connected blocks", related], ["Alternatives", c.alternatives]
+    ].map(([term, value]) => `<div><dt>${escapeHtml(term)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("");
+    notes.innerHTML = [`Limitations: ${c.limitations}`, ...c.notes].map(n => `<div class="note">${escapeHtml(n)}</div>`).join("");
+    links.innerHTML = (c.links || []).map(([label, url]) => `<a href="${escapeHtml(url)}" target="_blank" rel="noreferrer">${escapeHtml(label)} ↗</a>`).join("");
     pinBody.innerHTML = c.pins.map(p => `
       <tr>
         <td>${escapeHtml(p.label)}</td>
         <td>${escapeHtml(p.signal)}</td>
-        <td>${escapeHtml(p.connect)}</td>
+        <td>${escapeHtml(controllerPin(c, p))}</td>
+        <td>${escapeHtml(pinDirection(c, p))}</td>
+        <td>${escapeHtml(pinElectricalType(p))}</td>
+        <td>${escapeHtml(p.signal)}</td>
+        <td>${escapeHtml(pinNote(c, p))}</td>
       </tr>`).join("");
+    document.getElementById("inspector").setAttribute("aria-label", `Inspector for ${c.title}`);
+    announce(`${c.title} selected. ${related ? `Connected to ${related}.` : ""}`);
     draw();
+  }
+
+  function controllerPin(component, pin) {
+    if (component.id === "esp32") return pin.label.split(" ")[0];
+    const gpio = pin.connect.match(/(?:ESP32 )?(GPIO\d+|MCP23017 GPA\d|ADS1115 A\d)/i);
+    return gpio ? gpio[1] : pin.connect;
+  }
+
+  function pinDirection(component, pin) {
+    const text = `${pin.label} ${pin.signal}`.toUpperCase();
+    if (/GND|VCC|VDD|VIN|VBAT|CELL|5V|3V3|POWER/.test(text)) return /GND/.test(text) ? "Power return" : "Power input/output";
+    if (/SDA/.test(text)) return "Bidirectional";
+    if (/MISO/.test(text)) return component.id === "esp32" ? "Input" : "Output / high-Z when inactive";
+    if (/TX/.test(text)) return "Output";
+    if (/GPS_RX|GPIO34|GPIO35|GPIO36|A0|A1|RF IN|FROM VOUT/.test(text)) return "Input";
+    if (/OUT|VOUT|GDO|IRQ|INTA|INTB|ALRT/.test(text)) return "Output";
+    if (/ADDR|RESET|OE̅|GPA6|GPB/.test(text)) return "Input/configuration";
+    if (/BUTTON|UP|DOWN|LEFT|RIGHT|SELECT/.test(text)) return component.id === "mcp" ? "Input" : "Active-low output to input";
+    if (/USB|SMA|RF/.test(text)) return "Bidirectional link / receive path as documented";
+    return "Output from controller / input at peripheral";
+  }
+
+  function pinElectricalType(pin) {
+    const text = `${pin.label} ${pin.signal}`.toUpperCase();
+    if (/GND/.test(text)) return "Ground";
+    if (/VCC|VDD|VIN|VBAT|CELL|5V|3V3|POWER/.test(text)) return "Power";
+    if (/SDA|SCL/.test(text)) return "I²C open-drain";
+    if (/SCK|MOSI|MISO|CSN|\bCS\b/.test(text)) return "SPI digital";
+    if (/A0|A1|VOUT|ANALOG|ANALOGUE|LIGHT/.test(text)) return "Analogue";
+    if (/RF|SMA|ANT/.test(text)) return "50 Ω RF";
+    if (/USB/.test(text)) return "USB differential";
+    if (/TX|RX/.test(text)) return "UART digital";
+    return "GPIO digital";
+  }
+
+  function pinNote(component, pin) {
+    const text = `${pin.label} ${pin.signal}`.toUpperCase();
+    if (/CSN|\bCS\b/.test(text)) return "Dedicated active-low select; keep high while inactive.";
+    if (/MISO/.test(text)) return component.id === "esp32" ? "GPIO35 is input-only and therefore suitable." : "Must become high impedance when CS/CSN is high.";
+    if (/GPIO34|GPIO35|GPIO36/.test(text)) return "ESP32 input-only GPIO.";
+    if (/GPIO2|GPIO5|GPIO15/.test(text)) return "ESP32 boot-strapping pin; verify external pulls and boot state.";
+    if (/SDA|SCL/.test(text)) return "Shared 3.3 V bus with pull-ups and common ground.";
+    if (/CE/.test(text)) return "Dedicated nRF radio-enable; different from SPI CSN.";
+    if (/A0|A1|VOUT/.test(text)) return "Never exceed ADS1115 GND–VDD input range; calibrate before use.";
+    if (/GND/.test(text)) return "Use a short, low-impedance common return.";
+    return pin.connect;
   }
 
   function escapeHtml(value) {
@@ -1425,6 +1839,95 @@ footer {
     el.hidden = false;
     clearTimeout(flashMessage.timer);
     flashMessage.timer = setTimeout(() => { el.hidden = true; }, 1800);
+    announce(message);
+  }
+
+  function setMode(mode) {
+    activeMode = mode;
+    guideStep = 0;
+    document.querySelectorAll("[data-mode]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.mode === mode)));
+    document.getElementById("busField").hidden = mode !== "bus";
+    document.getElementById("pathField").hidden = mode !== "signal";
+    document.getElementById("guidePanel").hidden = !["signal", "learning"].includes(mode);
+    if (mode === "component") {
+      document.getElementById("modePanel").innerHTML = "<strong>Component mode.</strong> Select a block to highlight its direct connections, power context and ground relationship.";
+    } else if (mode === "bus") {
+      updateBusMode();
+    } else if (mode === "power") {
+      document.getElementById("modePanel").innerHTML = `<strong>Power mode.</strong> ${escapeHtml(buses.power.explanation)} All blocks share the common ground reference.`;
+    } else {
+      document.getElementById("modePanel").innerHTML = mode === "signal" ? "<strong>Signal-path mode.</strong> Follow one observation or metadata flow step by step." : "<strong>Learning mode.</strong> A ten-step introduction to the complete passive analyser.";
+      updateGuide();
+    }
+    draw();
+    announce(`${mode} mode active.`);
+  }
+
+  function updateBusMode() {
+    const bus = buses[activeBus];
+    document.getElementById("modePanel").innerHTML = `<strong>${escapeHtml(bus.title)} · ${escapeHtml(bus.voltage)}</strong><br>${escapeHtml(bus.explanation)}<br><em>Controller/master: ${escapeHtml(bus.controller)}</em>`;
+    draw();
+    announce(`${bus.title} highlighted.`);
+  }
+
+  function updateGuide() {
+    const guide = activeMode === "signal" ? signalPaths[activePath] : null;
+    const total = activeMode === "signal" ? guide.steps.length : learningSteps.length;
+    guideStep = Math.max(0, Math.min(guideStep, total - 1));
+    const title = activeMode === "signal" ? `${guide.title} · ${guideStep + 1}/${total}` : learningSteps[guideStep].title;
+    const text = activeMode === "signal" ? guide.notes[guideStep] : learningSteps[guideStep].text;
+    const componentId = activeMode === "signal" ? guide.steps[guideStep] : learningSteps[guideStep].component;
+    document.getElementById("guideTitle").textContent = title;
+    document.getElementById("guideText").textContent = text;
+    document.getElementById("guidePrev").disabled = guideStep === 0;
+    document.getElementById("guideNext").disabled = guideStep === total - 1;
+    const component = findComponent(componentId);
+    if (component) {
+      if (!layerState[component.layer]) { layerState[component.layer] = true; syncLayerControls(); }
+      selectedId = component.id;
+      focusComponent(component, false);
+    }
+    announce(`${title}. ${text}`);
+    draw();
+  }
+
+  function componentSearchText(component) {
+    const own = [component.title, component.subtitle, component.description, component.manufacturer, component.category, component.status, component.why, component.role, component.supply, component.logic, component.interface, component.band, component.limitations, component.alternatives, ...component.badges, ...component.notes];
+    component.pins.forEach(pin => own.push(pin.label, pin.signal, pin.connect));
+    wires.filter(wire => wire.from[0] === component.id || wire.to[0] === component.id).forEach(wire => own.push(wire.label, wire.bus, buses[wire.bus]?.title));
+    return own.join(" ").toLowerCase();
+  }
+
+  function searchComponents(query) {
+    const normalised = query.toLowerCase().trim();
+    const terms = normalised.split(/\s+/).filter(Boolean);
+    if (!terms.length) return [];
+    return components.filter(component => {
+      const text = componentSearchText(component);
+      return terms.every(term => text.includes(term));
+    }).map(component => {
+      const title = component.title.toLowerCase();
+      const pinExact = component.pins.some(pin => pin.label.toLowerCase() === normalised);
+      const pinStarts = component.pins.some(pin => pin.label.toLowerCase().startsWith(normalised));
+      const score = title === normalised ? 1000 : title.startsWith(normalised) ? 700 : title.includes(normalised) ? 500 : pinExact ? 450 : pinStarts ? 425 : 0;
+      return { component, score };
+    }).sort((a, b) => b.score - a.score || a.component.title.localeCompare(b.component.title))
+      .map(result => result.component).slice(0, 12);
+  }
+
+  function renderSearchResults(query) {
+    const container = document.getElementById("searchResults");
+    const input = document.getElementById("searchInput");
+    const results = searchComponents(query);
+    if (!query.trim()) {
+      container.hidden = true;
+      input.setAttribute("aria-expanded", "false");
+      return results;
+    }
+    container.innerHTML = results.length ? results.map(component => `<button type="button" class="search-result" role="option" data-component-id="${component.id}"><strong>${escapeHtml(component.title)}</strong><small>${escapeHtml(component.subtitle)} · ${escapeHtml(component.interface)}</small></button>`).join("") : '<p class="description">No matching component, pin, signal, bus or purpose.</p>';
+    container.hidden = false;
+    input.setAttribute("aria-expanded", "true");
+    return results;
   }
 
   function populateControls() {
@@ -1444,8 +1947,10 @@ footer {
       draw();
     });
 
-    const datalist = document.getElementById("componentNames");
-    datalist.innerHTML = components.map(c => `<option value="${escapeHtml(c.title)}"></option>`).join("");
+    const busSelect = document.getElementById("busSelect");
+    busSelect.innerHTML = Object.entries(buses).map(([id, bus]) => `<option value="${id}">${escapeHtml(bus.title)}</option>`).join("");
+    const pathSelect = document.getElementById("pathSelect");
+    pathSelect.innerHTML = Object.entries(signalPaths).map(([id, path]) => `<option value="${id}">${escapeHtml(path.title)}</option>`).join("");
 
     const summary = document.getElementById("summaryTables");
     summary.innerHTML = summaryGroups.map(group => `
@@ -1458,6 +1963,15 @@ footer {
           </table>
         </div>
       </div>`).join("");
+
+    document.getElementById("busLearningCards").innerHTML = Object.entries(buses).map(([id, bus]) => `
+      <article class="bus-card">
+        <h3>${escapeHtml(bus.title)}</h3><p>${escapeHtml(bus.explanation)}</p><div class="bus-lines">${escapeHtml(bus.lines)}</div>
+        <button type="button" class="wide" data-bus-card="${id}">Highlight ${escapeHtml(bus.title)}</button>
+      </article>`).join("");
+    document.getElementById("comparisonCards").innerHTML = comparisons.map(item => `<div class="comparison-card"><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.text)}</p></div>`).join("");
+    document.getElementById("learningCards").innerHTML = learningSteps.map((item, index) => `<article class="learning-card"><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.text)}</p><button type="button" class="wide" data-learning-step="${index}">Start at step ${index + 1}</button></article>`).join("");
+    document.getElementById("glossaryCards").innerHTML = glossary.map(([term, meaning]) => `<div class="learning-card"><h3>${escapeHtml(term)}</h3><p>${escapeHtml(meaning)}</p></div>`).join("");
   }
 
   function syncLayerControls() {
@@ -1527,6 +2041,7 @@ footer {
   document.getElementById("resetView").addEventListener("click", () => {
     Object.keys(layerState).forEach(k => layerState[k] = true);
     syncLayerControls();
+    setMode("component");
     selectComponent(null);
     fitView();
   });
@@ -1544,20 +2059,69 @@ footer {
     draw();
   });
 
-  document.getElementById("searchButton").addEventListener("click", () => {
-    const query = document.getElementById("searchInput").value.trim().toLowerCase();
-    if (!query) return flashMessage("Enter a component name.");
-    const c = components.find(item =>
-      item.title.toLowerCase() === query ||
-      item.title.toLowerCase().includes(query) ||
-      item.subtitle.toLowerCase().includes(query)
-    );
-    if (c) focusComponent(c);
-    else flashMessage("Component not found.");
+  document.getElementById("modeControls").addEventListener("click", event => {
+    const button = event.target.closest("button[data-mode]");
+    if (button) setMode(button.dataset.mode);
   });
 
+  document.getElementById("busSelect").addEventListener("change", event => {
+    activeBus = event.target.value;
+    updateBusMode();
+  });
+
+  document.getElementById("pathSelect").addEventListener("change", event => {
+    activePath = event.target.value;
+    guideStep = 0;
+    updateGuide();
+  });
+
+  document.getElementById("guidePrev").addEventListener("click", () => { guideStep -= 1; updateGuide(); });
+  document.getElementById("guideNext").addEventListener("click", () => { guideStep += 1; updateGuide(); });
+  document.getElementById("guideExit").addEventListener("click", () => setMode("component"));
+
+  document.getElementById("busLearningCards").addEventListener("click", event => {
+    const card = event.target.closest("[data-bus-card]");
+    if (!card) return;
+    activeBus = card.dataset.busCard;
+    document.getElementById("busSelect").value = activeBus;
+    setMode("bus");
+    document.querySelector(".workspace").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  document.getElementById("learningCards").addEventListener("click", event => {
+    const card = event.target.closest("[data-learning-step]");
+    if (!card) return;
+    setMode("learning");
+    guideStep = Number(card.dataset.learningStep);
+    updateGuide();
+    document.querySelector(".workspace").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  document.getElementById("searchButton").addEventListener("click", () => {
+    const query = document.getElementById("searchInput").value.trim();
+    if (!query) return flashMessage("Enter a component, GPIO, signal, bus or purpose.");
+    const results = renderSearchResults(query);
+    if (results[0]) {
+      setMode("component");
+      focusComponent(results[0]);
+      document.getElementById("searchResults").hidden = true;
+      document.getElementById("searchInput").setAttribute("aria-expanded", "false");
+    } else flashMessage("No matching component or signal.");
+  });
+
+  document.getElementById("searchInput").addEventListener("input", event => renderSearchResults(event.target.value));
   document.getElementById("searchInput").addEventListener("keydown", event => {
     if (event.key === "Enter") document.getElementById("searchButton").click();
+  });
+
+  document.getElementById("searchResults").addEventListener("click", event => {
+    const result = event.target.closest("[data-component-id]");
+    if (!result) return;
+    const component = findComponent(result.dataset.componentId);
+    setMode("component");
+    focusComponent(component);
+    document.getElementById("searchResults").hidden = true;
+    document.getElementById("searchInput").setAttribute("aria-expanded", "false");
   });
 
   document.getElementById("exportPng").addEventListener("click", () => {
@@ -1582,6 +2146,35 @@ footer {
     view.x = worldX - mainRect.width / (2 * view.scale);
     view.y = worldY - mainRect.height / (2 * view.scale);
     draw();
+  });
+
+  window.addEventListener("keydown", event => {
+    const typing = /INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName || "");
+    if (event.key === "/" && !typing) {
+      event.preventDefault();
+      document.getElementById("searchInput").focus();
+      return;
+    }
+    if (typing) return;
+    if (event.key === "+" || event.key === "=") {
+      event.preventDefault(); document.getElementById("zoomIn").click();
+    } else if (event.key === "-") {
+      event.preventDefault(); document.getElementById("zoomOut").click();
+    } else if (event.key === "0") {
+      event.preventDefault(); fitView();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      if (["signal", "learning"].includes(activeMode)) setMode("component");
+      else selectComponent(null);
+    } else if (event.key.startsWith("Arrow") && selectedId) {
+      const related = connectedIds(selectedId);
+      if (!related.length) return;
+      event.preventDefault();
+      const currentIndex = related.indexOf(selectedId);
+      const direction = ["ArrowLeft", "ArrowUp"].includes(event.key) ? -1 : 1;
+      const next = findComponent(related[(Math.max(0, currentIndex) + direction + related.length) % related.length]);
+      if (next) { setMode("component"); focusComponent(next); }
+    }
   });
 
   window.addEventListener("resize", resizeCanvas);
