@@ -144,6 +144,8 @@ ESP32 GPIO22  -------------------> I2C_SCL --------------------+
                                                               +--> BME280
                                                               +--> MAX17043
                                                               +--> MCP23017
+                                                              +--> ADS1115
+                                                              +--> ESP32-C5 conceptual link
 ```
 
 Use approximately 4.7 kOhm pull-up resistors from SDA and SCL to 3.3 V if they are not already fitted on the modules.
@@ -154,12 +156,18 @@ Use approximately 4.7 kOhm pull-up resistors from SDA and SCL to 3.3 V if they a
 NEO-6M TX     -------------------> ESP32 GPIO36
 NEO-6M RX     -------------------  Not connected for receive-only GPS
 
-TEMT6000 OUT  -------------------> ESP32 GPIO39 ADC
+TEMT6000 OUT  -------------------> ADS1115 A1
 
-Optional WS2812 DIN <------------- ESP32 GPIO15 through 330 Ohm
+AD8318 VOUT   -------------------> 10 kOhm / 20 kOhm divider
+Divider OUT   -------------------> ADS1115 A0
+
+ESP32 GPIO15  -------------------> 74AHCT125 input
+74AHCT125 OUT --------------------> Optional WS2812 DIN through 330 Ohm
 ```
 
-GPIO36 and GPIO39 are input-only, which is correct for GPS RX and analogue sensing. If a 5 V WS2812 is used, place a proper 3.3 V-to-5 V logic-level buffer between GPIO15 and DIN.
+GPIO36 is input-only, which is correct for GPS RX. GPIO15 is a boot-strapping
+pin, so verify the buffer input and pull state during reset. Keep every ADS1115
+analogue input between ground and its 3.3 V supply.
 
 ---
 
@@ -208,9 +216,12 @@ Wire each button between its MCP23017 input and GND, then enable the expander's 
 | BME280 | SDA / SCL | GPIO21 / GPIO22 |
 | MAX17043 | SDA / SCL | GPIO21 / GPIO22 |
 | MCP23017 | SDA / SCL | GPIO21 / GPIO22 |
+| ADS1115 | SDA / SCL | GPIO21 / GPIO22 |
+| ESP32-C5 conceptual | GPIO2 SDA / GPIO3 SCL | GPIO21 / GPIO22; verify exact board revision |
 | NEO-6M | TX | GPIO36 |
-| TEMT6000 | OUT | GPIO39 |
-| Optional WS2812 | DIN | GPIO15 through 330 Ohm |
+| TEMT6000 | OUT | ADS1115 A1 |
+| AD8318 | VOUT | ADS1115 A0 through 10 kOhm / 20 kOhm divider |
+| 74AHCT125 | A / Y | GPIO15 / WS2812 DIN through 330 Ohm |
 
 ---
 
