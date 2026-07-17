@@ -73,4 +73,3 @@
 - Keep every inactive SPI CS/CSN high and require MISO high impedance.
 - All ESP32-facing logic is 3.3 V. A breakout accepting 5 V power does not
   automatically make its logic outputs 3.3 V safe.
-

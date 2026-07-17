@@ -58,4 +58,3 @@ uncalibrated voltage as absolute RF power.
 - The detector divider cannot exceed ADS1115 VDD under worst-case tolerance.
 - Antennas, cables and modules suit their intended bands.
 - Firmware contains passive observation and receive-only functions only.
-

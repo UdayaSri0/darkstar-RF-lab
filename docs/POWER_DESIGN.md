@@ -70,4 +70,3 @@ than assuming a 3.3 V high is reliable.
 5. Add receivers individually, then noisy UI/storage loads.
 6. Confirm every ADC input remains within ground and ADC VDD.
 7. Record measured peak and steady loads before finalising ratings.
-

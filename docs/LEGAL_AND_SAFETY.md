@@ -35,4 +35,3 @@ nRF24L01 RPD is coarse activity indication. ESP32-C5 provides Wi-Fi survey
 metadata. AD8318 provides aggregate power in the selected filter passband.
 HackRF may provide frequency-selective receive samples through a host. These
 measurement types are different and cannot be presented as equivalent.
-

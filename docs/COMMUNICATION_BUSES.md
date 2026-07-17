@@ -73,4 +73,3 @@ Power is not a communication bus. Supply voltage, logic voltage and current
 capacity are different properties. The system uses protected 5 V distribution,
 a low-noise 3.3 V RF regulator, local decoupling and a common ground reference.
 See [POWER_DESIGN.md](POWER_DESIGN.md).
-
