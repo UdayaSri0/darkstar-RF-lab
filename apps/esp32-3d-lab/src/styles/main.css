@@ -1,0 +1,251 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background: #071019;
+  color: #e5f2f7;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+html, body, #esp32-3d-lab-root { width: 100%; min-width: 320px; height: 100%; margin: 0; overflow: hidden; }
+button, select, textarea { font: inherit; }
+button, select { color: inherit; }
+
+.ds3d-app {
+  --ds3d-bg: #071019;
+  --ds3d-panel: #0b1720;
+  --ds3d-panel-raised: #10222e;
+  --ds3d-border: #213b49;
+  --ds3d-border-bright: #315b6d;
+  --ds3d-text: #e5f2f7;
+  --ds3d-muted: #829ba8;
+  --ds3d-cyan: #42c9ff;
+  --ds3d-cyan-dim: #183e4d;
+  --ds3d-green: #76e6a4;
+  --ds3d-amber: #ffcf66;
+  --ds3d-danger: #ff7285;
+  display: grid;
+  grid-template-rows: 64px minmax(0, 1fr) 30px;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ds3d-bg);
+  color: var(--ds3d-text);
+}
+.ds3d-app [hidden] { display: none !important; }
+
+.ds3d-skip-link {
+  position: fixed;
+  z-index: 100;
+  top: -4rem;
+  left: 1rem;
+  padding: .7rem 1rem;
+  border-radius: 0 0 7px 7px;
+  background: var(--ds3d-cyan);
+  color: #031018;
+}
+.ds3d-skip-link:focus { top: 0; }
+
+.ds3d-topbar {
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--ds3d-border);
+  background: linear-gradient(180deg, #0d1c26, #09141c);
+  box-shadow: 0 8px 22px rgb(0 0 0 / .18);
+}
+
+.ds3d-brand { display: flex; align-items: center; gap: 10px; min-width: 208px; }
+.ds3d-brand__mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #29718a;
+  border-radius: 9px;
+  background: linear-gradient(145deg, #123b4d, #0a212d);
+  color: var(--ds3d-cyan);
+  font: 600 .72rem "IBM Plex Mono", monospace;
+  box-shadow: inset 0 0 18px rgb(66 201 255 / .08);
+}
+.ds3d-brand strong { display: block; font-size: .92rem; letter-spacing: .01em; }
+.ds3d-brand small { display: block; margin-top: 1px; color: var(--ds3d-muted); font-size: .64rem; letter-spacing: .11em; text-transform: uppercase; }
+.ds3d-topbar__group { display: flex; align-items: center; gap: 6px; }
+.ds3d-topbar__group--views { margin-left: auto; }
+
+.ds3d-button, .ds3d-icon-button {
+  min-height: 34px;
+  border: 1px solid var(--ds3d-border);
+  border-radius: 6px;
+  background: #10222e;
+  color: #d9eaef;
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+.ds3d-button { padding: 0 11px; font-size: .76rem; }
+.ds3d-icon-button { width: 34px; padding: 0; font: 600 1rem "IBM Plex Mono", monospace; }
+.ds3d-button:hover, .ds3d-icon-button:hover { border-color: #3f7287; background: #16303e; }
+.ds3d-button:active, .ds3d-icon-button:active { transform: translateY(1px); }
+.ds3d-button:focus-visible, .ds3d-icon-button:focus-visible, .ds3d-tool:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--ds3d-cyan);
+  outline-offset: 2px;
+}
+.ds3d-button--primary { border-color: #247c98; background: #13506a; }
+.ds3d-button:disabled { cursor: not-allowed; opacity: .45; }
+
+.ds3d-field { display: grid; gap: 6px; color: var(--ds3d-muted); font-size: .7rem; }
+.ds3d-field--inline { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ds3d-field select, .ds3d-field textarea, .ds3d-topbar select {
+  border: 1px solid var(--ds3d-border);
+  border-radius: 6px;
+  background: #07151e;
+  color: var(--ds3d-text);
+}
+.ds3d-field select, .ds3d-topbar select { min-height: 34px; padding: 0 28px 0 9px; font-size: .73rem; }
+.ds3d-field textarea { width: 100%; resize: vertical; padding: 9px; line-height: 1.45; }
+
+.ds3d-workspace { display: grid; grid-template-columns: 88px minmax(0, 1fr) 310px; min-height: 0; }
+.ds3d-toolbar, .ds3d-inspector { background: var(--ds3d-panel); }
+.ds3d-toolbar { z-index: 5; padding: 12px 8px; border-right: 1px solid var(--ds3d-border); overflow-y: auto; }
+.ds3d-toolbar h2 { margin: 0 0 9px; color: var(--ds3d-muted); font-size: .63rem; font-weight: 600; letter-spacing: .13em; text-align: center; text-transform: uppercase; }
+.ds3d-tool {
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: 2px;
+  width: 100%;
+  min-height: 53px;
+  margin: 0 0 4px;
+  padding: 5px 3px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ds3d-muted);
+  cursor: pointer;
+}
+.ds3d-tool:hover { border-color: var(--ds3d-border); background: #0f202b; color: var(--ds3d-text); }
+.ds3d-tool[aria-pressed="true"] { border-color: #276279; background: var(--ds3d-cyan-dim); color: #dff7ff; box-shadow: inset 3px 0 var(--ds3d-cyan); }
+.ds3d-tool__icon { color: var(--ds3d-cyan); font: 500 1.08rem "IBM Plex Mono", monospace; }
+.ds3d-tool__name { max-width: 72px; overflow: hidden; font-size: .66rem; text-overflow: ellipsis; white-space: nowrap; }
+.ds3d-tool kbd { color: #58717d; font: 400 .52rem "IBM Plex Mono", monospace; }
+
+.ds3d-viewport { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: #071019; }
+.ds3d-canvas { display: block; width: 100%; height: 100%; outline: none; }
+.ds3d-label-layer { position: absolute; inset: 0; pointer-events: none; }
+.ds3d-label {
+  display: block;
+  padding: 3px 6px;
+  border: 1px solid rgb(75 184 220 / .45);
+  border-radius: 4px;
+  background: rgb(5 18 25 / .83);
+  color: #d6f4ff;
+  font: 500 9px "IBM Plex Mono", monospace;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  backdrop-filter: blur(5px);
+  transform: translate(-50%, -150%);
+}
+.ds3d-label--pin { border-color: rgb(255 207 102 / .32); color: #f9d985; font-size: 8px; }
+.ds3d-viewport__hint {
+  position: absolute;
+  z-index: 3;
+  right: 14px;
+  bottom: 12px;
+  padding: 6px 9px;
+  border: 1px solid rgb(67 105 121 / .45);
+  border-radius: 5px;
+  background: rgb(6 19 27 / .72);
+  color: #72909e;
+  font: 400 9px "IBM Plex Mono", monospace;
+  pointer-events: none;
+}
+.ds3d-loading { position: absolute; z-index: 8; inset: 0; display: grid; place-content: center; gap: 12px; background: #071019; color: var(--ds3d-muted); font-size: .8rem; text-align: center; }
+.ds3d-loading span { width: 38px; height: 38px; margin: auto; border: 2px solid #17313d; border-top-color: var(--ds3d-cyan); border-radius: 50%; animation: ds3d-spin .8s linear infinite; }
+@keyframes ds3d-spin { to { transform: rotate(360deg); } }
+.ds3d-toast { position: absolute; z-index: 6; left: 50%; bottom: 24px; max-width: min(430px, 80%); padding: 9px 13px; border: 1px solid #326578; border-radius: 6px; background: rgb(9 30 40 / .94); color: #dff7ff; font-size: .74rem; box-shadow: 0 8px 28px rgb(0 0 0 / .35); transform: translateX(-50%); }
+
+.ds3d-inspector { z-index: 5; border-left: 1px solid var(--ds3d-border); overflow-y: auto; scrollbar-color: #244453 transparent; }
+.ds3d-inspector__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 17px 16px 7px; }
+.ds3d-eyebrow { color: var(--ds3d-cyan); font: 500 .58rem "IBM Plex Mono", monospace; letter-spacing: .14em; text-transform: uppercase; }
+.ds3d-inspector h2, .ds3d-dialog h2 { margin: 4px 0 0; font-size: 1rem; line-height: 1.25; }
+.ds3d-inspector h3 { margin: 0 0 9px; color: #9ab0ba; font-size: .64rem; letter-spacing: .1em; text-transform: uppercase; }
+.ds3d-badge { max-width: 105px; padding: 4px 6px; border: 1px solid var(--ds3d-border); border-radius: 4px; color: var(--ds3d-muted); font: 400 .55rem "IBM Plex Mono", monospace; text-align: center; }
+.ds3d-muted { color: var(--ds3d-muted); font-size: .7rem; line-height: 1.5; }
+.ds3d-inspector > .ds3d-muted { margin: 0; padding: 0 16px 14px; }
+.ds3d-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 0; border-top: 1px solid var(--ds3d-border); border-bottom: 1px solid var(--ds3d-border); background: var(--ds3d-border); }
+.ds3d-detail-grid div { padding: 10px 13px; background: #0c1b24; }
+.ds3d-detail-grid dt, .ds3d-capability-list dt { color: #607985; font: 500 .55rem "IBM Plex Mono", monospace; letter-spacing: .07em; text-transform: uppercase; }
+.ds3d-detail-grid dd { margin: 4px 0 0; color: #dcebf0; font-size: .7rem; line-height: 1.35; }
+.ds3d-inspector-section { padding: 13px 16px; border-bottom: 1px solid var(--ds3d-border); }
+.ds3d-chip-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.ds3d-chip-list span { padding: 4px 6px; border: 1px solid #285269; border-radius: 4px; background: #102a38; color: #9cdef8; font: 400 .58rem "IBM Plex Mono", monospace; }
+.ds3d-capability-list { display: grid; gap: 6px; margin: 0; }
+.ds3d-capability-list div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ds3d-capability-list dd { margin: 0; color: #d4e5ea; font-size: .66rem; text-align: right; }
+.ds3d-warning { margin: 0 0 6px; padding: 8px; border-left: 2px solid var(--ds3d-amber); background: #262111; color: #f5d98e; font-size: .65rem; line-height: 1.45; }
+.ds3d-connection { display: flex; align-items: center; gap: 7px; margin: 0 0 6px; color: #b8ccd4; font-size: .65rem; }
+.ds3d-connection i { width: 13px; height: 3px; border-radius: 4px; background: var(--ds3d-wire); }
+.ds3d-notes .ds3d-field { margin-top: 8px; }
+.ds3d-notes .ds3d-button { width: 100%; margin-top: 7px; }
+.ds3d-note-list article { margin: 0 0 6px; padding: 8px; border: 1px solid var(--ds3d-border); border-radius: 5px; background: #091821; }
+.ds3d-note-list p { margin: 0; color: #d2e1e6; font-size: .67rem; line-height: 1.45; }
+.ds3d-note-list time { display: block; margin-top: 5px; color: #58717d; font: 400 .52rem "IBM Plex Mono", monospace; }
+
+.ds3d-statusbar { z-index: 12; display: flex; align-items: center; gap: 18px; min-width: 0; padding: 0 10px; border-top: 1px solid var(--ds3d-border); background: #07131b; color: #78919d; font: 400 .57rem "IBM Plex Mono", monospace; overflow: hidden; white-space: nowrap; }
+.ds3d-statusbar span { display: flex; align-items: center; gap: 5px; }
+.ds3d-statusbar b { color: #b0c4cc; font-weight: 500; }
+.ds3d-status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ds3d-green); box-shadow: 0 0 7px rgb(118 230 164 / .6); }
+.ds3d-statusbar__warnings { margin-left: auto; }
+
+.ds3d-dialog { width: min(420px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--ds3d-border-bright); border-radius: 9px; background: #0c1922; color: var(--ds3d-text); box-shadow: 0 24px 80px rgb(0 0 0 / .55); }
+.ds3d-dialog::backdrop { background: rgb(1 7 10 / .74); backdrop-filter: blur(3px); }
+.ds3d-dialog form { display: grid; gap: 15px; padding: 18px; }
+.ds3d-dialog header, .ds3d-dialog footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ds3d-dialog header button { border: 0; background: transparent; color: var(--ds3d-muted); font-size: 1.35rem; cursor: pointer; }
+.ds3d-dialog footer { justify-content: flex-end; }
+.ds3d-dialog--wide { width: min(680px, calc(100vw - 32px)); }
+.ds3d-check { display: flex; align-items: center; gap: 9px; color: #bdced5; font-size: .75rem; }
+.ds3d-check input { accent-color: var(--ds3d-cyan); }
+.ds3d-help-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ds3d-help-grid section { padding: 11px; border: 1px solid var(--ds3d-border); border-radius: 6px; background: #091720; }
+.ds3d-help-grid h3 { margin: 0 0 7px; color: var(--ds3d-cyan); font-size: .77rem; }
+.ds3d-help-grid p, .ds3d-callout { margin: 0; color: var(--ds3d-muted); font-size: .69rem; line-height: 1.55; }
+.ds3d-callout { padding: 10px; border-left: 2px solid var(--ds3d-amber); background: #211d10; color: #d8c890; }
+
+.ds3d-error { position: fixed; z-index: 100; inset: 0; display: grid; place-content: center; justify-items: center; gap: 10px; padding: 24px; background: #110a0e; color: #ffdbe0; text-align: center; }
+.ds3d-error span { max-width: 500px; color: #c698a1; }
+.ds3d-error button { padding: 8px 14px; border: 1px solid #743442; border-radius: 5px; background: #34141d; color: white; }
+.ds3d-visually-hidden { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.ds3d-reduced-motion * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ds3d-app * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}
+
+@media (max-width: 1050px) {
+  .ds3d-app { grid-template-rows: auto minmax(0, 1fr) 30px; }
+  .ds3d-topbar { min-height: 64px; flex-wrap: wrap; gap: 6px 12px; padding-block: 8px; }
+  .ds3d-brand { min-width: 180px; }
+  .ds3d-topbar__group--views { margin-left: 0; }
+  .ds3d-workspace { grid-template-columns: 72px minmax(0, 1fr) 280px; }
+  .ds3d-tool kbd { display: none; }
+  .ds3d-statusbar { gap: 11px; }
+  .ds3d-statusbar span:nth-of-type(4), .ds3d-statusbar span:nth-of-type(6) { display: none; }
+}
+
+@media (max-width: 760px) {
+  html, body, #esp32-3d-lab-root { overflow: auto; }
+  .ds3d-app { grid-template-rows: auto minmax(560px, 1fr) auto; min-height: 100%; height: auto; }
+  .ds3d-topbar__group { flex-wrap: wrap; }
+  .ds3d-topbar__group--views { width: 100%; }
+  .ds3d-field--inline:first-child { display: none; }
+  .ds3d-workspace { grid-template-columns: 58px minmax(0, 1fr); grid-template-rows: minmax(480px, 70vh) auto; }
+  .ds3d-inspector { grid-column: 1 / -1; min-height: 420px; border-top: 1px solid var(--ds3d-border); border-left: 0; }
+  .ds3d-toolbar { grid-row: 1; }
+  .ds3d-tool { min-height: 45px; }
+  .ds3d-tool__name { display: none; }
+  .ds3d-statusbar { min-height: 36px; flex-wrap: wrap; padding-block: 5px; white-space: normal; }
+  .ds3d-help-grid { grid-template-columns: 1fr; }
+}
