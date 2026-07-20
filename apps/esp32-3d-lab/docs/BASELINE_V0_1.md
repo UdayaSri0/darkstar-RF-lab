@@ -10,9 +10,9 @@ This document records the standalone ESP32 3D Lab before the multi-component exp
 
 ## Repository safety state
 
-The requested local integration branch did not exist at audit start. A local `integration/esp32-3d-v0.2` branch was created at `main`, and this audit branch was created from it. On the older starting feature branch, the working tree showed a modified root `README.md` and an untracked `docs/darkstar-codex-prompt-pack/` directory. Both match content already tracked by the baseline `main` commit. They were preserved and are not part of this audit.
+The requested local integration branch did not exist at audit start. A local `integration/esp32-3d-v0.2` branch was created at `main`, and this audit branch was created from it. On the older starting feature branch, the working tree showed a modified root `README.md` and an untracked `docs/darkstar-codex-prompt-pack/` directory. They were preserved and are not part of this audit. While the audit was in progress, the matching upstream task branch advanced to `6bddcf4`, which tracks that pre-existing root documentation; it made no change to the protected guide, the 3D application source, tests or package files.
 
-The two rule files named by Prompt 00, `SHARED_RULES.md` and `apps/esp32-3d-lab/docs/codex-prompts/SHARED_RULES.md`, were not present at the baseline commit. The audit followed the tracked copy at `docs/darkstar-codex-prompt-pack/apps/esp32-3d-lab/docs/codex-prompts/SHARED_RULES.md`; the prompt pack is unchanged by this work.
+The two rule files named by Prompt 00, `SHARED_RULES.md` and `apps/esp32-3d-lab/docs/codex-prompts/SHARED_RULES.md`, were not present at the baseline commit. The audit followed the available copy at `docs/darkstar-codex-prompt-pack/apps/esp32-3d-lab/docs/codex-prompts/SHARED_RULES.md`; it was untracked at audit start and was subsequently tracked by the upstream update described above. The prompt pack is unchanged by this audit commit.
 
 ## Current architecture map
 
