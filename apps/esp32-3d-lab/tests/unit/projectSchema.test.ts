@@ -84,6 +84,17 @@ describe("project schema version 2", () => {
   it("rejects unsupported project versions", () => {
     expect(() => decodeProject({ version: 99 })).toThrow(/Unsupported project version/);
   });
+
+  it("retains well-formed unknown components for placeholder rendering", () => {
+    const project = createEmptyProject();
+    project.components.push({
+      ...secondController("future-component"),
+      typeId: "future-hardware",
+      variantId: "future-variant",
+    });
+    expect(validateProjectV2(project).valid).toBe(true);
+    expect(decodeProject(project).project.components[1]?.typeId).toBe("future-hardware");
+  });
 });
 
 describe("version 1 migration", () => {

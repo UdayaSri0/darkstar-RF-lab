@@ -1,5 +1,6 @@
 import type * as THREE from "three";
 import { esp32DevKit, getPin } from "../data/esp32DevKit";
+import { componentRegistry } from "../components/registry";
 import { LabScene } from "../rendering/LabScene";
 import { byId, escapeHtml } from "../ui/dom";
 import { createShell } from "../ui/shell";
@@ -57,7 +58,7 @@ export class LabApp {
     this.project = storedProject.project ?? createEmptyProject();
     this.persistenceBlocked = Boolean(storedProject.error);
     const viewport = byId<HTMLElement>("ds3d-viewport");
-    this.scene = new LabScene(viewport, esp32DevKit, {
+    this.scene = new LabScene(viewport, componentRegistry, {
       onSelect: (selection) => this.onSceneSelection(selection),
       onPointer: (position) => this.updatePointer(position),
       onFps: (fps) => { byId("ds3d-status-fps").textContent = String(fps); },

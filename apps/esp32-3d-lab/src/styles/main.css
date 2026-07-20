@@ -148,6 +148,16 @@ button, select { color: inherit; }
   transform: translate(-50%, -150%);
 }
 .ds3d-label--pin { border-color: rgb(255 207 102 / .32); color: #f9d985; font-size: 8px; }
+.ds3d-component-error {
+  max-width: 220px;
+  border-color: rgb(255 114 133 / .8);
+  background: rgb(58 12 23 / .94);
+  color: #ffdbe0;
+  font-size: 9px;
+  line-height: 1.35;
+  text-align: center;
+  white-space: normal;
+}
 .ds3d-viewport__hint {
   position: absolute;
   z-index: 3;
