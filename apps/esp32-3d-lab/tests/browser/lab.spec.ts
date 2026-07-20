@@ -14,6 +14,15 @@ test("loads the standalone engineering shell and WebGL viewport", async ({ page 
   await expect(page.getByText("Nothing selected")).toBeVisible();
 });
 
+test("creates the ESP32 through the registry and keeps it selectable", async ({ page }) => {
+  await page.goto("./");
+  const canvas = page.locator("canvas.ds3d-canvas");
+  await expect(canvas).toHaveAttribute("data-runtime-count", "1");
+  await expect(canvas).toHaveAttribute("data-runtime-type-ids", "esp32-devkit");
+  await canvas.click();
+  await expect(page.locator("#ds3d-status-selection")).not.toHaveText("None");
+});
+
 test("switches tools and opens settings", async ({ page }) => {
   await page.goto("./");
   await page.getByRole("button", { name: "Wire" }).click();
@@ -75,4 +84,33 @@ test("does not overwrite a stored project when migration fails", async ({ page }
   await page.reload();
   const storedProject = await page.evaluate(() => localStorage.getItem("darkstar.esp32-3d-lab.project"));
   expect(storedProject).toBe(invalidStoredProject);
+});
+
+test("renders an explanatory placeholder for an unknown saved component", async ({ page }) => {
+  const project = {
+    version: 2,
+    name: "Unknown component recovery",
+    verificationMode: "conceptual",
+    components: [{
+      id: "unknown-module",
+      typeId: "future-hardware",
+      variantId: "future-variant",
+      transform: { positionMm: [0, 0, 0], rotationDeg: [0, 0, 0], scale: [1, 1, 1] },
+      locked: false,
+      properties: {},
+    }],
+    cables: [],
+    measurements: [],
+    notes: [],
+    simulation: { status: "idle", elapsedMs: 0, properties: {} },
+    modifiedAt: "2026-07-20T00:00:00.000Z",
+  };
+  await page.addInitScript((savedProject) => {
+    localStorage.setItem("darkstar.esp32-3d-lab.project", JSON.stringify(savedProject));
+  }, project);
+  await page.goto("./");
+
+  await expect(page.locator("canvas.ds3d-canvas")).toHaveAttribute("data-placeholder-count", "1");
+  await expect(page.locator(".ds3d-component-error")).toContainText("future-hardware / future-variant");
+  await expect(page.locator("#esp32-3d-lab-root .ds3d-app")).toBeVisible();
 });

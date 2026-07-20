@@ -1,6 +1,6 @@
 # Board data format
 
-Board definitions live in `src/data/` and conform to `BoardDefinition` in `src/app/types.ts`.
+The original ESP32 pin source remains in `src/data/` and conforms to `BoardDefinition` in `src/app/types.ts`. It now feeds the ESP32 component definition and runtime adapter rather than being constructed directly by the renderer.
 
 ```ts
 interface BoardDefinition {
@@ -51,11 +51,11 @@ For example, `main-controller::pin-21` and `aux-controller::pin-21` are distinct
 
 ## Adding a board
 
-1. Add a typed module under `src/data/`.
-2. Use a new stable board ID and stable unique pin IDs.
-3. Add the definition to the exported `boards` array.
-4. Add a procedural model factory or a base-aware GLB loader.
-5. Add unit tests for pin count, unique IDs, power pins, and key bus functions.
-6. Add the board selector option and verify old project files still load through the versioned migration path.
+1. Add the source data under `src/data/` when a board-specific data layer is useful.
+2. Define a stable component type, variants, terminals, mounting data, keep-out zones, and evidence metadata under `src/components/`.
+3. Implement the shared runtime factory contract and register it in `src/components/registry/defaultRegistry.ts`.
+4. Keep GLB assets local and resolve their URLs with the base-aware registry helper; runtime network model loading is prohibited.
+5. Add unit tests for component, variant and terminal uniqueness, electrical metadata, and factory output.
+6. Verify project loading, selection, visual modes and old migrations through browser tests.
 
 Pin data is educational. Record revision-specific uncertainty explicitly and link future data provenance in the board module rather than presenting assumptions as verified electrical facts.

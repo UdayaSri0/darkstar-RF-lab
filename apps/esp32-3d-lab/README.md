@@ -17,6 +17,7 @@ The 3D laboratory uses its own `index.html`, build process, assets, styles, stat
 - Pin capability data covering voltage, direction, ADC, DAC, UART, SPI, I²C, touch, and electrical warnings.
 - Wire routing, point-to-point measurement, object notes, undo/redo, local autosave, JSON project import/export, and PNG screenshots.
 - Version-2 multi-component project data with instance-qualified terminal references and safe migration of version-1 saved projects.
+- A typed component registry with variant resolution, uniform terminal/mounting/evidence metadata, reusable runtime factories, and visible fallbacks for unavailable saved hardware.
 - Namespaced settings and project storage, responsive layouts, reduced-motion support, and accessible controls.
 
 The model is an educational representation, not a manufacturing CAD model. Always verify the silk labels, board revision, electrical limits, and pin assignments against the exact hardware and manufacturer documentation before powering a circuit.
@@ -67,6 +68,7 @@ The application has no code, state, style, router, backend, or build dependency 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Version 0.1 baseline](docs/BASELINE_V0_1.md)
 - [Board data format](docs/BOARD_DATA_FORMAT.md)
+- [Component registry contract](docs/COMPONENT_REGISTRY.md)
 - [Component guide](docs/COMPONENT_GUIDE.md)
 - [Integration guide](docs/INTEGRATION_GUIDE.md)
 - [Multi-component implementation plan](docs/MULTI_COMPONENT_PLAN.md)

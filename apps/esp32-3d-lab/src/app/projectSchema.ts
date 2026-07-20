@@ -1,4 +1,6 @@
 import { boards, esp32DevKit } from "../data/esp32DevKit";
+import { ESP32_COMPONENT_TYPE_ID, ESP32_LEGACY_VARIANT_ID } from "../components/esp32/esp32Component";
+import { componentRegistry } from "../components/registry";
 import type {
   CableConnection,
   ComponentInstance,
@@ -10,9 +12,8 @@ import type {
 } from "./types";
 
 export const MAIN_CONTROLLER_INSTANCE_ID = "main-controller";
-export const ESP32_COMPONENT_TYPE_ID = "esp32-devkit";
-export const ESP32_LEGACY_VARIANT_ID = esp32DevKit.id;
 export const LEGACY_CABLE_TYPE_ID = "legacy-wire";
+export { ESP32_COMPONENT_TYPE_ID, ESP32_LEGACY_VARIANT_ID };
 
 const idPattern = /^[a-z0-9](?:[a-z0-9._-]{0,63})$/;
 
@@ -88,9 +89,6 @@ function validateComponent(value: unknown, index: number, errors: string[]): val
   if (!isId(value.id)) errors.push(`${path}.id is malformed.`);
   if (!isId(value.typeId)) errors.push(`${path}.typeId is malformed.`);
   if (!isId(value.variantId)) errors.push(`${path}.variantId is malformed.`);
-  if (value.typeId !== ESP32_COMPONENT_TYPE_ID || !boards.some((board) => board.id === value.variantId)) {
-    errors.push(`${path} uses an unsupported component type or variant.`);
-  }
   if (!isRecord(value.transform)) {
     errors.push(`${path}.transform must be an object.`);
   } else {
@@ -123,7 +121,8 @@ function validateTerminalRef(
     errors.push(`${path} references unknown component instance "${value.instanceId}".`);
     return false;
   }
-  if (component.typeId === ESP32_COMPONENT_TYPE_ID && !esp32DevKit.pins.some((pin) => pin.id === value.terminalId)) {
+  const definition = componentRegistry.getDefinition(component.typeId);
+  if (definition && !definition.terminals.some((terminal) => terminal.id === value.terminalId)) {
     errors.push(`${path} references unknown terminal "${value.terminalId}" on "${value.instanceId}".`);
   }
   return true;

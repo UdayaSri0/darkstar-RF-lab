@@ -116,7 +116,7 @@ export function createEsp32Board(board: BoardDefinition): BoardModel {
     labels.push(pinLabel);
 
     if (index % 3 === 0) {
-      const via = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.12, 12), materials.silk);
+      const via = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.12, 12), materials.silk.clone());
       via.position.set(pin.side === "left" ? -9.8 : 9.8, 2.5, z);
       group.add(via);
     }

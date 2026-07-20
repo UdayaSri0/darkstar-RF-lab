@@ -10,9 +10,7 @@ import type {
   TerminalRef,
   VisualMode,
 } from "../app/types";
-import type { BoardDefinition } from "../app/types";
-import { ESP32_COMPONENT_TYPE_ID } from "../app/projectSchema";
-import { createEsp32Board, type BoardModel } from "../boards/createEsp32Board";
+import type { ComponentRegistry, RuntimeComponent } from "../components/registry";
 
 export interface SceneCallbacks {
   onSelect: (selection: SelectionDetails | null) => void;
@@ -31,18 +29,21 @@ export class LabScene {
   private readonly pointer = new THREE.Vector2();
   private readonly workPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   private readonly grid = new THREE.GridHelper(180, 36, 0x2e7492, 0x183447);
-  private readonly boardModel: BoardModel;
+  private readonly componentGroup = new THREE.Group();
   private readonly overlayGroup = new THREE.Group();
+  private readonly runtimes = new Map<string, RuntimeComponent>();
+  private selectables: THREE.Object3D[] = [];
   private selectedObject: THREE.Object3D | null = null;
   private selectedOriginalEmissive = 0;
   private animationFrame = 0;
   private lastFrame = performance.now();
   private frameSamples: number[] = [];
-  private activeComponentInstanceId: string | null = null;
+  private visualMode: VisualMode = "realistic";
+  private labelsVisible = true;
 
   constructor(
     private readonly host: HTMLElement,
-    board: BoardDefinition,
+    private readonly registry: ComponentRegistry,
     private readonly callbacks: SceneCallbacks,
   ) {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -52,7 +53,7 @@ export class LabScene {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     this.renderer.domElement.className = "ds3d-canvas";
-    this.renderer.domElement.setAttribute("aria-label", "Interactive 3D ESP32 board viewport");
+    this.renderer.domElement.setAttribute("aria-label", "Interactive 3D hardware lab viewport");
     this.renderer.domElement.tabIndex = 0;
     this.labelRenderer.domElement.className = "ds3d-label-layer";
 
@@ -69,8 +70,7 @@ export class LabScene {
     this.controls.maxDistance = 220;
     this.controls.maxPolarAngle = Math.PI * 0.49;
 
-    this.boardModel = createEsp32Board(board);
-    this.scene.add(this.boardModel.group, this.overlayGroup);
+    this.scene.add(this.componentGroup, this.overlayGroup);
     this.createEnvironment();
     this.bindEvents();
     this.resize();
@@ -129,10 +129,11 @@ export class LabScene {
     const planePoint = new THREE.Vector3();
     this.callbacks.onPointer(this.raycaster.ray.intersectPlane(this.workPlane, planePoint) ? planePoint : null);
     if (!select) return;
-    const hit = this.raycaster.intersectObjects(this.boardModel.selectables, false)[0];
+    const hit = this.raycaster.intersectObjects(this.selectables, false)[0];
     const baseSelection = hit?.object.userData.selection as SelectionDetails | undefined;
-    const selection = baseSelection && this.activeComponentInstanceId
-      ? { ...baseSelection, instanceId: this.activeComponentInstanceId }
+    const instanceId = hit?.object.userData.componentInstanceId as string | undefined;
+    const selection = baseSelection && instanceId
+      ? { ...baseSelection, instanceId }
       : baseSelection;
     this.highlight(hit?.object ?? null);
     this.callbacks.onSelect(selection ?? null);
@@ -174,11 +175,13 @@ export class LabScene {
   }
 
   setVisualMode(mode: VisualMode): void {
-    this.boardModel.setVisualMode(mode);
+    this.visualMode = mode;
+    this.runtimes.forEach((runtime) => runtime.setVisualMode(mode));
   }
 
   setLabelsVisible(visible: boolean): void {
-    for (const label of this.boardModel.labels) label.visible = visible;
+    this.labelsVisible = visible;
+    this.runtimes.forEach((runtime) => runtime.labels.forEach((label) => { label.visible = visible; }));
   }
 
   setGridVisible(visible: boolean): void {
@@ -223,23 +226,8 @@ export class LabScene {
   }
 
   renderProject(project: LabProject): void {
-    this.overlayGroup.clear();
-    const component = project.components.find((candidate) =>
-      candidate.typeId === ESP32_COMPONENT_TYPE_ID && candidate.variantId === this.boardModel.group.name);
-    this.activeComponentInstanceId = component?.id ?? null;
-    this.boardModel.group.visible = Boolean(component);
-    if (component) {
-      const [rotationX, rotationY, rotationZ] = component.transform.rotationDeg;
-      this.boardModel.group.position.fromArray(component.transform.positionMm);
-      this.boardModel.group.rotation.set(
-        THREE.MathUtils.degToRad(rotationX),
-        THREE.MathUtils.degToRad(rotationY),
-        THREE.MathUtils.degToRad(rotationZ),
-      );
-      this.boardModel.group.scale.fromArray(component.transform.scale);
-      this.boardModel.group.updateMatrixWorld(true);
-    }
-    this.renderer.domElement.dataset.renderedComponentId = component?.id ?? "";
+    this.syncComponents(project.components);
+    this.clearOverlay();
 
     let renderedCableCount = 0;
     for (const cable of project.cables) {
@@ -268,10 +256,76 @@ export class LabScene {
     this.renderer.domElement.dataset.renderedCableCount = String(renderedCableCount);
   }
 
+  private syncComponents(components: LabProject["components"]): void {
+    const activeIds = new Set(components.map((component) => component.id));
+    this.runtimes.forEach((runtime, instanceId) => {
+      const instance = components.find((component) => component.id === instanceId);
+      if (!activeIds.has(instanceId)
+        || !instance
+        || instance.typeId !== runtime.instance.typeId
+        || instance.variantId !== runtime.instance.variantId) {
+        if (this.selectedObject && runtime.selectables.includes(this.selectedObject)) {
+          this.highlight(null);
+          this.callbacks.onSelect(null);
+        }
+        runtime.dispose();
+        this.runtimes.delete(instanceId);
+      }
+    });
+
+    for (const instance of components) {
+      let runtime = this.runtimes.get(instance.id);
+      if (!runtime) {
+        runtime = this.registry.createRuntime(instance);
+        this.runtimes.set(instance.id, runtime);
+        this.componentGroup.add(runtime.root);
+        runtime.selectables.forEach((selectable) => {
+          selectable.userData.componentInstanceId = instance.id;
+        });
+        runtime.setVisualMode(this.visualMode);
+        runtime.labels.forEach((label) => { label.visible = this.labelsVisible; });
+      }
+      runtime.instance = structuredClone(instance);
+      runtime.simulationAdapter?.apply(instance.properties);
+      this.applyTransform(runtime, instance.transform);
+    }
+
+    const runtimes = components.map((component) => this.runtimes.get(component.id)).filter((runtime): runtime is RuntimeComponent => Boolean(runtime));
+    this.selectables = runtimes.flatMap((runtime) => runtime.selectables);
+    this.renderer.domElement.dataset.renderedComponentId = runtimes[0]?.instance.id ?? "";
+    this.renderer.domElement.dataset.runtimeCount = String(runtimes.length);
+    this.renderer.domElement.dataset.runtimeTypeIds = runtimes.map((runtime) => runtime.instance.typeId).join(",");
+    this.renderer.domElement.dataset.placeholderCount = String(runtimes.filter((runtime) => runtime.status === "placeholder").length);
+  }
+
+  private applyTransform(runtime: RuntimeComponent, transform: LabProject["components"][number]["transform"]): void {
+    const [rotationX, rotationY, rotationZ] = transform.rotationDeg;
+    runtime.root.position.fromArray(transform.positionMm);
+    runtime.root.rotation.set(
+      THREE.MathUtils.degToRad(rotationX),
+      THREE.MathUtils.degToRad(rotationY),
+      THREE.MathUtils.degToRad(rotationZ),
+    );
+    runtime.root.scale.fromArray(transform.scale);
+    runtime.root.updateMatrixWorld(true);
+  }
+
+  private clearOverlay(): void {
+    this.overlayGroup.traverse((child) => {
+      if (child instanceof THREE.Mesh || child instanceof THREE.Line) {
+        child.geometry.dispose();
+        const material = child.material;
+        if (Array.isArray(material)) material.forEach((entry) => entry.dispose());
+        else material.dispose();
+      }
+    });
+    this.overlayGroup.clear();
+  }
+
   private resolveTerminalPosition(terminal: TerminalRef): THREE.Vector3 | null {
-    if (terminal.instanceId !== this.activeComponentInstanceId) return null;
-    const point = this.boardModel.pinPositions.get(terminal.terminalId);
-    return point ? this.boardModel.group.localToWorld(point.clone()) : null;
+    const runtime = this.runtimes.get(terminal.instanceId);
+    const point = runtime?.terminalAnchors.get(terminal.terminalId);
+    return runtime && point ? runtime.root.localToWorld(point.clone()) : null;
   }
 
   getTerminalPosition(terminal: TerminalRef): [number, number, number] | null {
@@ -291,6 +345,9 @@ export class LabScene {
     cancelAnimationFrame(this.animationFrame);
     window.removeEventListener("resize", this.resize);
     this.controls.dispose();
+    this.clearOverlay();
+    this.runtimes.forEach((runtime) => runtime.dispose());
+    this.runtimes.clear();
     this.renderer.dispose();
     this.host.replaceChildren();
   }

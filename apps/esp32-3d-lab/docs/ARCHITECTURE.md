@@ -13,7 +13,9 @@ index.html (#esp32-3d-lab-root)
   └─ main.ts (startup guard)
       └─ LabApp (commands, state, persistence, inspector)
           ├─ LabScene (Three.js, CSS labels, camera, raycasting)
-          │   └─ createEsp32Board (procedural geometry)
+          │   └─ ComponentRegistry
+          │       ├─ ESP32 runtime adapter → createEsp32Board
+          │       └─ unavailable-component placeholder runtime
           ├─ Project schema (validation and version-1 migration)
           ├─ Board data (typed pin and capability definitions)
           ├─ Circuit rules (electrical guidance)
@@ -24,7 +26,9 @@ index.html (#esp32-3d-lab-root)
 
 ## Rendering
 
-The renderer uses ACES tone mapping, sRGB output, soft shadows, hemisphere/key/rim lighting, fog, and a procedural ESD workbench. The ESP32 board is assembled from Three.js primitives so version one does not require an external GLB. Labels use `CSS2DRenderer`, and selection uses a dedicated raycaster list rather than scanning every scene object.
+The renderer uses ACES tone mapping, sRGB output, soft shadows, hemisphere/key/rim lighting, fog, and a procedural ESD workbench. `LabScene` synchronises one runtime per project component through the registry and does not construct a specific board type. The ESP32 runtime adapter continues to use the original Three.js primitive factory, preserving its visible geometry without requiring an external GLB. Labels use `CSS2DRenderer`, and selection uses a dedicated raycaster list composed from every active runtime.
+
+Each runtime exposes a root object, selectable objects, definition-local terminal anchors, mounting points, a bounding box, keep-out zones, labels, visual-mode handling, optional simulation handling, status, issues, and deterministic disposal. Unknown type or variant IDs produce a red labelled placeholder runtime. This keeps the rest of a valid saved project usable while making unavailable hardware visible.
 
 Rendering quality controls pixel ratio and shadows. The low-quality mode limits GPU work; medium renders at device-independent resolution; high uses up to 2× device pixel ratio.
 
@@ -34,7 +38,7 @@ New and exported projects use schema version 2. Project state contains stable co
 
 Version-1 documents are parsed through an explicit non-mutating migration. The legacy board becomes the `main-controller` component instance and every `fromPinId`/`toPinId` becomes a terminal reference on that instance. Project name, modified time, measurements and notes are preserved. Invalid or unsupported documents do not replace the current in-memory project or overwrite the stored source.
 
-The Prompt 01 renderer deliberately retains one procedural ESP32 runtime. It selects that board from `project.components`, applies its serialised transform, and resolves cable endpoints through the rendered instance ID. The schema permits multiple instances now; rendering all registered component types and simultaneous runtimes belongs to the component-registry phase.
+Known component definitions validate their definition-local terminal IDs. Structurally valid unknown definitions remain loadable so the renderer can represent them as recoverable placeholders; their terminal semantics cannot be checked until the definition is installed. Component transforms and cable endpoints are resolved per instance, so multiple registered runtimes can coexist and reuse terminal IDs safely.
 
 Mutating operations copy the previous serialisable version-2 state into a bounded 50-entry undo history, rebuild project overlays, and autosave after a short debounce. Camera and UI settings use independent keys.
 
