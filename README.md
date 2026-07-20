@@ -31,6 +31,7 @@ sub-GHz, 2.4 GHz, and 5 GHz experimentation.**
 - [Power design](#power-design)
 - [Interactive circuit guide](#interactive-circuit-guide)
 - [Getting started](#getting-started)
+- [Run the ESP32 3D Lab](#run-the-esp32-3d-lab)
 - [Assembly overview](#assembly-overview)
 - [Calibration and receive-only testing](#calibration-and-receive-only-testing)
 - [Repository structure](#repository-structure)
@@ -350,6 +351,35 @@ xdg-open web-guide/index.html
 No firmware build instructions are provided because the repository does not
 currently contain firmware or a defined embedded toolchain.
 
+## Run the ESP32 3D Lab
+
+The 3D lab is a separate Vite application in `apps/esp32-3d-lab`. It requires
+Node.js 20.19 or newer (Node.js 22.12 or newer is also supported) and npm.
+
+From the repository root, install the locked dependencies and start the
+development server:
+
+```bash
+cd apps/esp32-3d-lab
+npm ci
+npm run dev
+```
+
+Then open <http://localhost:5174/esp32-3d-lab/>. Keep the terminal running
+while using the app; press `Ctrl+C` to stop the server.
+
+To build and preview the production version instead:
+
+```bash
+npm run build
+npm run preview
+```
+
+Open the same URL after the preview server starts. If port `5174` is already
+in use, stop the process using that port before starting the lab. More commands
+and application details are available in the
+[`apps/esp32-3d-lab` README](apps/esp32-3d-lab/README.md).
+
 ## Assembly overview
 
 This is a high-level design sequence, not a substitute for a reviewed schematic
@@ -515,5 +545,4 @@ Read [`CONTRIBUTING.md`](CONTRIBUTING.md) before submitting a change.
 
 No open-source licence has been selected yet. All rights remain with the
 project owner.
-
 

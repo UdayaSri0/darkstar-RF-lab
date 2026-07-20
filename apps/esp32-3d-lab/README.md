@@ -64,7 +64,9 @@ The application has no code, state, style, router, backend, or build dependency 
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
+- [Version 0.1 baseline](docs/BASELINE_V0_1.md)
 - [Board data format](docs/BOARD_DATA_FORMAT.md)
 - [Component guide](docs/COMPONENT_GUIDE.md)
 - [Integration guide](docs/INTEGRATION_GUIDE.md)
+- [Multi-component implementation plan](docs/MULTI_COMPONENT_PLAN.md)
 - [Roadmap](docs/ROADMAP.md)

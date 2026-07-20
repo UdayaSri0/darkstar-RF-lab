@@ -1,0 +1,23 @@
+{
+  "main_controller": "ESP32-WROOM-32U development board with external antenna connector",
+  "scope": "Build the complete base system first; keep Raspberry Pi Zero 2 W and HackRF One as a later optional SDR workspace",
+  "nrf24_default": "nRF24L01+ PA/LNA with SMA antenna",
+  "nrf24_alternate": "Small PCB-antenna nRF24L01 variant",
+  "module_fidelity": "Start with generic educational modules; replace them with exact variants after product links or photographs are supplied",
+  "physical_construction": "Modular boards mounted on an acrylic or metal baseplate",
+  "baseplate": "300 mm \u00d7 220 mm adjustable baseplate",
+  "placement": "Drag, fixed/fine rotation, height, duplicate, lock, group, align, distribute, grid snap, mounting-hole snap, collision checks, antenna keep-outs, cable-bend clearance and mounting alignment; no automatic layout optimisation in the first release",
+  "simulation": "Levels 1\u20133: visual assembly, electrical validation and interactive mock behaviour; no firmware/MCU emulation",
+  "rf_simulation": "User-adjustable mock activity, animated signal paths and JSON/CSV imports; keep an interface boundary for future live serial/WebSocket data",
+  "cables": "Typed cable library with realistic diameter, connector ends, minimum bend radius, material and colour rules",
+  "wire_editing": "Manual control points, editable wire sections, harness bundles, labels, length display and intersection warnings; no automatic obstacle routing initially",
+  "one_click": "A complete-circuit preset and a guided-build wizard inside the standalone 3D application",
+  "layouts": "Functional-zone, bus-oriented and signal-flow presets; compact enclosure layout deferred",
+  "antennas": "Model antenna hardware, orientation, keep-out zones, separation guidance and enclosure/metal warnings",
+  "assets": "Hybrid: procedural geometry for boards, headers, terminals and simple parts; optimised GLB for complex connectors, displays, antennas and major modules",
+  "performance": "Balanced realism with Low, Medium and High quality modes",
+  "verification_modes": "Documented conceptual circuit mode plus a later validated-hardware mode",
+  "power": "USB power bank input with fuse, reverse-polarity protection, main switch and power LED; protected 5 V distribution and low-noise 3.3 V RF rail",
+  "delivery": "Markdown prompt folder first; GitHub issues only after approval",
+  "git": "Separate feature branch per prompt; merge into an integration branch only after tests pass; do not merge directly to main"
+}
