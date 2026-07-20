@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "name": "Legacy receiver bench",
+  "boardId": "esp32-devkit-v1-30p",
+  "wires": [
+    {
+      "id": "wire-legacy-1",
+      "fromPinId": "pin-12",
+      "toPinId": "pin-20",
+      "color": "#42c9ff",
+      "label": "GPIO14 → GPIO5"
+    }
+  ],
+  "measurements": [
+    {
+      "id": "measurement-legacy-1",
+      "from": [-12.2, 6.5, 9.7],
+      "to": [12.2, 6.5, 9.7],
+      "distanceMm": 24.4
+    }
+  ],
+  "notes": [
+    {
+      "id": "note-legacy-1",
+      "targetId": "pin-12",
+      "text": "Preserve this migration note.",
+      "createdAt": "2026-07-20T00:00:00.000Z"
+    }
+  ],
+  "modifiedAt": "2026-07-20T01:02:03.000Z"
+}

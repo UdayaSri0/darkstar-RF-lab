@@ -4,10 +4,12 @@ import {
   STORAGE_KEYS,
   createEmptyProject,
   loadProject,
+  loadProjectResult,
   loadSettings,
   saveProject,
   saveSettings,
 } from "../../src/app/ProjectStore";
+import legacyProject from "../fixtures/project-v1.json";
 
 describe("isolated project persistence", () => {
   beforeEach(() => localStorage.clear());
@@ -21,11 +23,23 @@ describe("isolated project persistence", () => {
     project.name = "Bench test";
     saveProject(project);
     expect(loadProject()?.name).toBe("Bench test");
+    expect(loadProject()?.version).toBe(2);
   });
 
   it("falls back safely when stored JSON is invalid", () => {
     localStorage.setItem(STORAGE_KEYS.project, "not-json");
     expect(loadProject()).toBeNull();
+    expect(localStorage.getItem(STORAGE_KEYS.project)).toBe("not-json");
+  });
+
+  it("migrates a stored version 1 project without overwriting the source", () => {
+    const raw = JSON.stringify(legacyProject);
+    localStorage.setItem(STORAGE_KEYS.project, raw);
+    const result = loadProjectResult();
+    expect(result.migrated).toBe(true);
+    expect(result.project?.version).toBe(2);
+    expect(result.project?.cables[0]?.from.instanceId).toBe("main-controller");
+    expect(localStorage.getItem(STORAGE_KEYS.project)).toBe(raw);
   });
 
   it("merges saved settings with defaults", () => {

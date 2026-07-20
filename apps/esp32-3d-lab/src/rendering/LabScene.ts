@@ -7,9 +7,11 @@ import type {
   LabProject,
   RenderQuality,
   SelectionDetails,
+  TerminalRef,
   VisualMode,
 } from "../app/types";
 import type { BoardDefinition } from "../app/types";
+import { ESP32_COMPONENT_TYPE_ID } from "../app/projectSchema";
 import { createEsp32Board, type BoardModel } from "../boards/createEsp32Board";
 
 export interface SceneCallbacks {
@@ -36,6 +38,7 @@ export class LabScene {
   private animationFrame = 0;
   private lastFrame = performance.now();
   private frameSamples: number[] = [];
+  private activeComponentInstanceId: string | null = null;
 
   constructor(
     private readonly host: HTMLElement,
@@ -127,7 +130,10 @@ export class LabScene {
     this.callbacks.onPointer(this.raycaster.ray.intersectPlane(this.workPlane, planePoint) ? planePoint : null);
     if (!select) return;
     const hit = this.raycaster.intersectObjects(this.boardModel.selectables, false)[0];
-    const selection = hit?.object.userData.selection as SelectionDetails | undefined;
+    const baseSelection = hit?.object.userData.selection as SelectionDetails | undefined;
+    const selection = baseSelection && this.activeComponentInstanceId
+      ? { ...baseSelection, instanceId: this.activeComponentInstanceId }
+      : baseSelection;
     this.highlight(hit?.object ?? null);
     this.callbacks.onSelect(selection ?? null);
   }
@@ -218,18 +224,37 @@ export class LabScene {
 
   renderProject(project: LabProject): void {
     this.overlayGroup.clear();
-    for (const wire of project.wires) {
-      const from = this.boardModel.pinPositions.get(wire.fromPinId);
-      const to = this.boardModel.pinPositions.get(wire.toPinId);
+    const component = project.components.find((candidate) =>
+      candidate.typeId === ESP32_COMPONENT_TYPE_ID && candidate.variantId === this.boardModel.group.name);
+    this.activeComponentInstanceId = component?.id ?? null;
+    this.boardModel.group.visible = Boolean(component);
+    if (component) {
+      const [rotationX, rotationY, rotationZ] = component.transform.rotationDeg;
+      this.boardModel.group.position.fromArray(component.transform.positionMm);
+      this.boardModel.group.rotation.set(
+        THREE.MathUtils.degToRad(rotationX),
+        THREE.MathUtils.degToRad(rotationY),
+        THREE.MathUtils.degToRad(rotationZ),
+      );
+      this.boardModel.group.scale.fromArray(component.transform.scale);
+      this.boardModel.group.updateMatrixWorld(true);
+    }
+    this.renderer.domElement.dataset.renderedComponentId = component?.id ?? "";
+
+    let renderedCableCount = 0;
+    for (const cable of project.cables) {
+      const from = this.resolveTerminalPosition(cable.from);
+      const to = this.resolveTerminalPosition(cable.to);
       if (!from || !to) continue;
       const mid = from.clone().lerp(to, 0.5);
       mid.y += Math.max(7, from.distanceTo(to) * 0.16);
       const curve = new THREE.QuadraticBezierCurve3(from, mid, to);
       const geometry = new THREE.TubeGeometry(curve, 32, 0.42, 8, false);
-      const material = new THREE.MeshStandardMaterial({ color: wire.color, roughness: 0.48 });
+      const material = new THREE.MeshStandardMaterial({ color: cable.color, roughness: 0.48 });
       const mesh = new THREE.Mesh(geometry, material);
-      mesh.name = wire.id;
+      mesh.name = cable.id;
       this.overlayGroup.add(mesh);
+      renderedCableCount += 1;
     }
     for (const measurement of project.measurements) {
       const points = [new THREE.Vector3(...measurement.from), new THREE.Vector3(...measurement.to)];
@@ -240,10 +265,17 @@ export class LabScene {
       line.computeLineDistances();
       this.overlayGroup.add(line);
     }
+    this.renderer.domElement.dataset.renderedCableCount = String(renderedCableCount);
   }
 
-  getPinPosition(pinId: string): [number, number, number] | null {
-    const point = this.boardModel.pinPositions.get(pinId);
+  private resolveTerminalPosition(terminal: TerminalRef): THREE.Vector3 | null {
+    if (terminal.instanceId !== this.activeComponentInstanceId) return null;
+    const point = this.boardModel.pinPositions.get(terminal.terminalId);
+    return point ? this.boardModel.group.localToWorld(point.clone()) : null;
+  }
+
+  getTerminalPosition(terminal: TerminalRef): [number, number, number] | null {
+    const point = this.resolveTerminalPosition(terminal);
     return point ? (point.toArray() as [number, number, number]) : null;
   }
 

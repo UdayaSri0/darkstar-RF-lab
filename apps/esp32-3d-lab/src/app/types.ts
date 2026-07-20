@@ -45,7 +45,7 @@ export interface BoardDefinition {
   pins: PinDefinition[];
 }
 
-export interface WireConnection {
+export interface LegacyWireConnection {
   id: string;
   fromPinId: string;
   toPinId: string;
@@ -67,15 +67,69 @@ export interface LabNote {
   createdAt: string;
 }
 
-export interface LabProject {
+export interface LabProjectV1 {
   version: 1;
   name: string;
   boardId: string;
-  wires: WireConnection[];
+  wires: LegacyWireConnection[];
   measurements: Measurement[];
   notes: LabNote[];
   modifiedAt: string;
 }
+
+export interface ComponentTransform {
+  positionMm: [number, number, number];
+  rotationDeg: [number, number, number];
+  scale: [number, number, number];
+}
+
+export interface ComponentInstance {
+  id: string;
+  typeId: string;
+  variantId: string;
+  transform: ComponentTransform;
+  locked: boolean;
+  groupId?: string;
+  userLabel?: string;
+  properties: Record<string, unknown>;
+}
+
+export interface TerminalRef {
+  instanceId: string;
+  terminalId: string;
+}
+
+export interface CableConnection {
+  id: string;
+  from: TerminalRef;
+  to: TerminalRef;
+  cableTypeId: string;
+  color: string;
+  controlPointsMm: [number, number, number][];
+  label?: string;
+  bundleId?: string;
+}
+
+export interface SimulationState {
+  status: "idle" | "running" | "paused";
+  elapsedMs: number;
+  properties: Record<string, unknown>;
+}
+
+export interface LabProjectV2 {
+  version: 2;
+  name: string;
+  verificationMode: "conceptual" | "validated";
+  layoutPresetId?: string;
+  components: ComponentInstance[];
+  cables: CableConnection[];
+  measurements: Measurement[];
+  notes: LabNote[];
+  simulation: SimulationState;
+  modifiedAt: string;
+}
+
+export type LabProject = LabProjectV2;
 
 export interface LabSettings {
   quality: RenderQuality;
@@ -91,6 +145,7 @@ export interface CameraState {
 
 export interface SelectionDetails {
   id: string;
+  instanceId?: string;
   name: string;
   category: string;
   pin?: PinDefinition;
