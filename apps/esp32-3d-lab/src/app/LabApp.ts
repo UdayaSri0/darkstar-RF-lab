@@ -1,5 +1,5 @@
 import type * as THREE from "three";
-import { boards, esp32DevKit, getPin } from "../data/esp32DevKit";
+import { esp32DevKit, getPin } from "../data/esp32DevKit";
 import { LabScene } from "../rendering/LabScene";
 import { byId, escapeHtml } from "../ui/dom";
 import { createShell } from "../ui/shell";
@@ -7,17 +7,19 @@ import { createId } from "../utilities/ids";
 import {
   createEmptyProject,
   loadCamera,
-  loadProject,
+  loadProjectResult,
   loadSettings,
   saveCamera,
   saveProject,
   saveSettings,
 } from "./ProjectStore";
+import { LEGACY_CABLE_TYPE_ID, MAIN_CONTROLLER_INSTANCE_ID, terminalKey, tryImportProject } from "./projectSchema";
 import type {
   CameraView,
   LabProject,
   LabSettings,
   SelectionDetails,
+  TerminalRef,
   ToolId,
   VisualMode,
 } from "./types";
@@ -41,16 +43,19 @@ export class LabApp {
   private settings: LabSettings;
   private tool: ToolId = "select";
   private selection: SelectionDetails | null = null;
-  private pendingPinId: string | null = null;
+  private pendingTerminal: TerminalRef | null = null;
   private history: LabProject[] = [];
   private future: LabProject[] = [];
+  private persistenceBlocked = false;
   private saveTimer = 0;
   private toastTimer = 0;
 
   constructor(private readonly root: HTMLElement) {
     root.innerHTML = createShell();
     this.settings = loadSettings(defaultSettings);
-    this.project = loadProject() ?? createEmptyProject();
+    const storedProject = loadProjectResult();
+    this.project = storedProject.project ?? createEmptyProject();
+    this.persistenceBlocked = Boolean(storedProject.error);
     const viewport = byId<HTMLElement>("ds3d-viewport");
     this.scene = new LabScene(viewport, esp32DevKit, {
       onSelect: (selection) => this.onSceneSelection(selection),
@@ -66,6 +71,11 @@ export class LabApp {
     this.renderInspector();
     viewport.querySelector(".ds3d-loading")?.remove();
     this.updateWarningCount();
+    if (storedProject.error) {
+      this.showToast(`Saved project left unchanged: ${storedProject.error}`);
+    } else if (storedProject.migrated) {
+      this.showToast("Version 1 project migrated safely to version 2.");
+    }
   }
 
   private bindInterface(): void {
@@ -91,7 +101,9 @@ export class LabApp {
     byId<HTMLInputElement>("ds3d-grid-visible").addEventListener("change", () => this.updateSettingsFromForm());
     byId<HTMLInputElement>("ds3d-reduced-motion").addEventListener("change", () => this.updateSettingsFromForm());
     window.addEventListener("keydown", (event) => this.handleKeyboard(event));
-    window.addEventListener("beforeunload", () => saveProject(this.project));
+    window.addEventListener("beforeunload", () => {
+      if (!this.persistenceBlocked) saveProject(this.project);
+    });
   }
 
   private runAction(action: string): void {
@@ -124,7 +136,7 @@ export class LabApp {
       return;
     }
     this.tool = tool;
-    this.pendingPinId = null;
+    this.pendingTerminal = null;
     this.scene.setInteractionMode(tool === "pan" ? "pan" : tool === "rotate" ? "rotate" : "select");
     this.root.querySelectorAll<HTMLButtonElement>("[data-tool]").forEach((button) => {
       button.setAttribute("aria-pressed", String(button.dataset.tool === tool));
@@ -148,7 +160,10 @@ export class LabApp {
     this.renderInspector();
     if (!selection) return;
     if ((this.tool === "wire" || this.tool === "measure") && selection.pin) {
-      this.handleTwoPinTool(selection.pin.id);
+      this.handleTwoPinTool({
+        instanceId: selection.instanceId ?? MAIN_CONTROLLER_INSTANCE_ID,
+        terminalId: selection.pin.id,
+      });
     } else if ((this.tool === "wire" || this.tool === "measure") && !selection.pin) {
       this.showToast(`${toolNames[this.tool]} requires a header pin.`);
     } else if (this.tool === "note") {
@@ -156,36 +171,38 @@ export class LabApp {
     }
   }
 
-  private handleTwoPinTool(pinId: string): void {
-    if (!this.pendingPinId) {
-      this.pendingPinId = pinId;
-      this.showToast(`${getPin(esp32DevKit, pinId)?.name ?? pinId} selected. Choose the second pin.`);
+  private handleTwoPinTool(terminal: TerminalRef): void {
+    if (!this.pendingTerminal) {
+      this.pendingTerminal = terminal;
+      this.showToast(`${getPin(esp32DevKit, terminal.terminalId)?.name ?? terminal.terminalId} selected. Choose the second pin.`);
       return;
     }
-    if (this.pendingPinId === pinId) {
+    if (terminalKey(this.pendingTerminal) === terminalKey(terminal)) {
       this.showToast("Choose a different second pin.");
       return;
     }
     this.pushHistory();
     if (this.tool === "wire") {
-      this.project.wires.push({
+      this.project.cables.push({
         id: createId("wire"),
-        fromPinId: this.pendingPinId,
-        toPinId: pinId,
-        color: this.wireColor(this.project.wires.length),
-        label: `${getPin(esp32DevKit, this.pendingPinId)?.name ?? this.pendingPinId} → ${getPin(esp32DevKit, pinId)?.name ?? pinId}`,
+        from: this.pendingTerminal,
+        to: terminal,
+        cableTypeId: LEGACY_CABLE_TYPE_ID,
+        color: this.wireColor(this.project.cables.length),
+        controlPointsMm: [],
+        label: `${getPin(esp32DevKit, this.pendingTerminal.terminalId)?.name ?? this.pendingTerminal.terminalId} → ${getPin(esp32DevKit, terminal.terminalId)?.name ?? terminal.terminalId}`,
       });
       this.showToast("Wire connection added.");
     } else {
-      const from = this.scene.getPinPosition(this.pendingPinId);
-      const to = this.scene.getPinPosition(pinId);
+      const from = this.scene.getTerminalPosition(this.pendingTerminal);
+      const to = this.scene.getTerminalPosition(terminal);
       if (from && to) {
         const distance = Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]);
         this.project.measurements.push({ id: createId("measurement"), from, to, distanceMm: Number(distance.toFixed(1)) });
         this.showToast(`Measurement added: ${distance.toFixed(1)} mm.`);
       }
     }
-    this.pendingPinId = null;
+    this.pendingTerminal = null;
     this.changed();
   }
 
@@ -215,9 +232,12 @@ export class LabApp {
         : "<div><dd>No peripheral function recorded.</dd></div>";
       byId("ds3d-warnings").innerHTML = (pin.warnings.length ? pin.warnings : ["ESP32 GPIO uses 3.3 V logic and is not 5 V tolerant."])
         .map((warning) => `<p class="ds3d-warning">${escapeHtml(warning)}</p>`).join("");
-      const connections = this.project.wires.filter((wire) => wire.fromPinId === pin.id || wire.toPinId === pin.id);
+      const instanceId = selection.instanceId ?? MAIN_CONTROLLER_INSTANCE_ID;
+      const connections = this.project.cables.filter((cable) =>
+        (cable.from.instanceId === instanceId && cable.from.terminalId === pin.id)
+        || (cable.to.instanceId === instanceId && cable.to.terminalId === pin.id));
       byId("ds3d-connections").innerHTML = connections.length
-        ? connections.map((wire) => `<span class="ds3d-connection"><i style="--ds3d-wire:${wire.color}"></i>${escapeHtml(wire.label)}</span>`).join("")
+        ? connections.map((cable) => `<span class="ds3d-connection"><i style="--ds3d-wire:${cable.color}"></i>${escapeHtml(cable.label ?? cable.id)}</span>`).join("")
         : "No wires connected.";
     }
     const noteInput = byId<HTMLTextAreaElement>("ds3d-note-input");
@@ -272,15 +292,15 @@ export class LabApp {
   }
 
   private deleteLast(): void {
-    if (!this.project.wires.length && !this.project.measurements.length && !this.project.notes.length) {
+    if (!this.project.cables.length && !this.project.measurements.length && !this.project.notes.length) {
       return this.showToast("Nothing to delete.");
     }
     this.pushHistory();
-    const lastWire = this.project.wires.at(-1)?.id ?? "";
+    const lastWire = this.project.cables.at(-1)?.id ?? "";
     const lastMeasure = this.project.measurements.at(-1)?.id ?? "";
     const lastNote = this.project.notes.at(-1)?.id ?? "";
     const latest = [lastWire, lastMeasure, lastNote].sort().at(-1);
-    if (latest === lastWire) this.project.wires.pop();
+    if (latest === lastWire) this.project.cables.pop();
     else if (latest === lastMeasure) this.project.measurements.pop();
     else this.project.notes.pop();
     this.changed();
@@ -293,6 +313,10 @@ export class LabApp {
     this.renderInspector();
     this.updateWarningCount();
     window.clearTimeout(this.saveTimer);
+    if (this.persistenceBlocked) {
+      byId("ds3d-status-save").textContent = "Stored project preserved";
+      return;
+    }
     this.saveTimer = window.setTimeout(() => {
       this.project = saveProject(this.project);
       byId("ds3d-status-save").textContent = "Saved locally";
@@ -300,15 +324,17 @@ export class LabApp {
   }
 
   private exportProject(): void {
-    this.project = saveProject(this.project);
+    if (!this.persistenceBlocked) this.project = saveProject(this.project);
     const blob = new Blob([JSON.stringify(this.project, null, 2)], { type: "application/json" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = "darkstar-esp32-lab-project.json";
     link.click();
     URL.revokeObjectURL(link.href);
-    byId("ds3d-status-save").textContent = "Saved + exported";
-    this.showToast("Project saved locally and exported as JSON.");
+    byId("ds3d-status-save").textContent = this.persistenceBlocked ? "Recovery preserved + exported" : "Saved + exported";
+    this.showToast(this.persistenceBlocked
+      ? "Project exported as version 2; the unreadable stored project remains untouched."
+      : "Project saved locally and exported as JSON.");
   }
 
   private async importProject(event: Event): Promise<void> {
@@ -316,14 +342,14 @@ export class LabApp {
     const file = input.files?.[0];
     if (!file) return;
     try {
-      const candidate = JSON.parse(await file.text()) as LabProject;
-      if (candidate.version !== 1 || !boards.some((board) => board.id === candidate.boardId) || !Array.isArray(candidate.wires)) {
-        throw new Error("This file is not a supported DarkStar ESP32 Lab project.");
-      }
+      const candidate = JSON.parse(await file.text()) as unknown;
+      const result = tryImportProject(candidate, this.project);
+      if (!result.ok) throw new Error(`Current project left unchanged: ${result.error}`);
       this.pushHistory();
-      this.project = { ...createEmptyProject(), ...candidate };
+      this.project = result.project;
+      this.persistenceBlocked = false;
       this.changed();
-      this.showToast(`Loaded “${this.project.name}”.`);
+      this.showToast(`Loaded “${this.project.name}”${result.migrated ? " and migrated it to version 2" : ""}.`);
     } catch (error) {
       this.showToast(error instanceof Error ? error.message : "Project could not be loaded.");
     } finally {
@@ -335,6 +361,7 @@ export class LabApp {
     if (!window.confirm("Create a new lab project? The current project remains in your exported file if you saved it.")) return;
     this.pushHistory();
     this.project = createEmptyProject();
+    this.persistenceBlocked = false;
     this.selection = null;
     this.changed();
     this.showToast("New project created.");
@@ -364,8 +391,10 @@ export class LabApp {
   }
 
   private updateWarningCount(): void {
-    const pins = new Set(this.project.wires.flatMap((wire) => [wire.fromPinId, wire.toPinId]));
-    const count = [...pins].reduce((total, id) => total + (getPin(esp32DevKit, id)?.warnings.length ?? 0), 0);
+    const terminals = new Map(this.project.cables.flatMap((cable) => [cable.from, cable.to])
+      .map((terminal) => [terminalKey(terminal), terminal]));
+    const count = [...terminals.values()].reduce((total, terminal) =>
+      total + (getPin(esp32DevKit, terminal.terminalId)?.warnings.length ?? 0), 0);
     byId("ds3d-status-warnings").textContent = String(count);
   }
 

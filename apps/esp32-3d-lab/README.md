@@ -16,6 +16,7 @@ The 3D laboratory uses its own `index.html`, build process, assets, styles, stat
 - Perspective, top, front, and side cameras with orbit, pan, zoom, and camera-state persistence.
 - Pin capability data covering voltage, direction, ADC, DAC, UART, SPI, I²C, touch, and electrical warnings.
 - Wire routing, point-to-point measurement, object notes, undo/redo, local autosave, JSON project import/export, and PNG screenshots.
+- Version-2 multi-component project data with instance-qualified terminal references and safe migration of version-1 saved projects.
 - Namespaced settings and project storage, responsive layouts, reduced-motion support, and accessible controls.
 
 The model is an educational representation, not a manufacturing CAD model. Always verify the silk labels, board revision, electrical limits, and pin assignments against the exact hardware and manufacturer documentation before powering a circuit.
